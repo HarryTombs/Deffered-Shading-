@@ -6,15 +6,17 @@ This is the project i've decided on
 
 The one suggested in the sample projects. This is me not trying to reinvent the wheel here. I get lighting systems and i know how they work already ,well enough to know (vaugely) how to approach this project, so doing a path tracer or something along those lines would interested me greatly. **I THINK IT WILL STILL BE VERY HARD** but i think its a more possible goal to achieve. 
 
-The majority of papers i've found and talks i've listened to are from nvidia with pretty useful complete github pages of their RTXGI (global illumination) and RTXDI (dynamic illumination) SDKs. Which i will obviously be a great help for me to look at more direct uses of C++ implementation
+A lot of papers i've found and talks i've listened to are from nvidia with pretty useful complete github pages of their RTXGI (global illumination) and RTXDI (dynamic illumination) SDKs. Which i will obviously be a great help for me to look at more direct uses of C++ implementation
+So there's no real way for me to come up with a revolutionary idea, but i guess thats not the point
 
-The main issue i've found for me as an individual is whether i can acheive this in real time rendering because im not an Nvida engineer
+I've learned im doing rasterisation first to figure things out because its the most common implementation of realtime GI 
+It involves baking lighting from a given scene file, A similar ray tracing technique but baking it for using later
 
-So as a backup for a technique that i know is real time but unfortunatly a vastly different approach is using light field probes
+we can combine rasterisation with a quicker form or ray tracing to get a pretty nice looking real time GI solution
+
+i also looked into light field probes which is similar but not the same thing
 light field probes work by having light "sensors" place across the scene which bake the lighting information and apply it to nearby objects based on proximity
 They are exceptionally fast to run but don't provide the most accurate lighting setup, as poor placement can lead to light or shadows leaking into incorrect places
-
-it depends whether or not real time rendering is a priority or im happy enough with an *almost* real time render (if i've done a bunch of work on a ray tracer im not gonna bin it because its not real time)
 
 
 ## How do ray tracing algorithms work?
@@ -74,8 +76,7 @@ https://www.gdcvault.com/play/1024353/
 
 https://in1weekend.blogspot.com/2016/01/ray-tracing-in-one-weekend.html
 
-
-### Light probes
+### Rasterisation ish
 
 https://docs.unity3d.com/Manual/LightProbes.html
 
@@ -87,18 +88,29 @@ https://dl.acm.org/doi/abs/10.1145/3023368.3023378
 
 https://github.com/Global-Illuminati/Precomputed-Light-Field-Probes
 
+https://developer.nvidia.com/gpugems/gpugems2/part-v-image-oriented-computing/chapter-38-high-quality-global-illumination
+
+https://bpb-us-w2.wpmucdn.com/sites.gatech.edu/dist/e/466/files/2014/07/gpulecture05su14_lightrast.pdf
+
+https://voltaico.net/files/article.pdf
+
+https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/overview-rasterization-algorithm.html
+
+https://en.wikipedia.org/wiki/Rasterisation
+
+https://blogs.nvidia.com/blog/whats-difference-between-ray-tracing-rasterization/
+
 
 ### Other
 
 https://ieeexplore.ieee.org/abstract/document/9527241
-
-https://www.khronos.org/opengl/wiki/Framebuffer
 
 https://learnopengl.com/
 
 https://graphicscodex.com/app/app.html
 
 https://www.khronos.org/opengl/wiki/
+
 
 
 
