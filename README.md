@@ -72,6 +72,8 @@ https://gdcvault.com/play/1026721/RTX-Ray-Tracing-Best-Practices
 
 https://www.gdcvault.com/play/1024353/
 
+https://in1weekend.blogspot.com/2016/01/ray-tracing-in-one-weekend.html
+
 
 ### Light probes
 
@@ -89,6 +91,15 @@ https://github.com/Global-Illuminati/Precomputed-Light-Field-Probes
 ### Other
 
 https://ieeexplore.ieee.org/abstract/document/9527241
+
+https://www.khronos.org/opengl/wiki/Framebuffer
+
+https://learnopengl.com/
+
+https://graphicscodex.com/app/app.html
+
+https://www.khronos.org/opengl/wiki/
+
 
 
 
