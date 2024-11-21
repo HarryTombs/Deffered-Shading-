@@ -10,22 +10,27 @@ A lot of papers i've found and talks i've listened to are from nvidia with prett
 So there's no real way for me to come up with a revolutionary idea, but i guess thats not the point
 
 I've learned im doing rasterisation first to figure things out because its the most common implementation of realtime GI 
-It involves baking lighting from a given scene file, A similar ray tracing technique but baking it for using later
-
+It involves computing an objects normals and using pre baked light maps to display realtime GI
 we can combine rasterisation with a quicker form or ray tracing to get a pretty nice looking real time GI solution
 
 i also looked into light field probes which is similar but not the same thing
 light field probes work by having light "sensors" place across the scene which bake the lighting information and apply it to nearby objects based on proximity
 They are exceptionally fast to run but don't provide the most accurate lighting setup, as poor placement can lead to light or shadows leaking into incorrect places
 
+## Razterisation
 
-## How do ray tracing algorithms work?
+Rasterisation is rendering images by directly projecting objects onto the pixels themselves, measuring the frame size and splating whats captured into the pixel it matches up to, to create the correct shape in the rendered image.
+When first rendering an image buffer is created and the frame size is shot out into space and sees what objects it hits, technically infinite distance but usually stopped at a point. The depth in the cameras Z axis is captured in order to process z depth because we humans process z depth (we have two eyes).
+After that each vertex of each triangle of each object is projected forwards towards the camera, scaling to the calculated z depth size and the affected pixels are coloured in to create a 2D image
+
+
+## Ray Tracing
 
 Real life light works by light coming from a source and bouncing into your eye, a room can be lit without you being there to see it since real life doesn't require processing power
 Ray tracing works in the opposite way, A camera functioning as an eye shoots rays into a space and bounces off an object a specified number of times or until it finds a light source
 The colour of that pixel is calculated by the informaiton gathered by those bounces including nearby light sources, reflective objects or lack there of.
 
-**To put it in terms of an algorithmic design**
+**ALGORITHM ISH**
 
 
 In a 3D lit scene with a camera
