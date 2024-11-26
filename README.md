@@ -71,9 +71,10 @@ class Image{
 
 class Rasterise{
 -zdepth : float
--culling distance : float
--vertex position : Vec3[0..*]
--camera position : Vec3
+-clipping distance : float
+-object transform : Mat4
+-camera transform : Mat4
+-local vertex position : Vec3[0..*]
 -faceColour: RGBA[0..*]
 -imageBuffer(_w : size_t, _h : size_t)
 -zBuffer(CamPos : Zdepth)
@@ -85,7 +86,7 @@ class Rasterise{
 
 class Raytracer{
 -zdepth : float
--culling distance : float
+-clipping distance : float
 -vertex position : Vec3[0..*]
 -camera position : Vec3
 -lights position : Vec3[0..*]
