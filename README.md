@@ -213,6 +213,14 @@ https://graphicscodex.com/app/app.html
 
 https://www.khronos.org/opengl/wiki/
 
+https://en.wikipedia.org/wiki/Bidirectional_reflectance_distribution_function
+
+https://en.wikipedia.org/wiki/Rendering_equation
+
+https://www.youtube.com/watch?v=gsZiJeaMO48
+
+https://ebookcentral.proquest.com/lib/bournemouth-ebooks/reader.action?docID=5754532&ppg=124#ppg=458
+
 
 
 
