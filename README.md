@@ -31,6 +31,16 @@ The colour of that pixel is calculated by the informaiton gathered by those boun
 
 In a 3D lit scene with a camera you take the resolution of the screen and for each pixel detailed in the camera shoot a ray throught the centre of the pixel. if it hits an object (otherwise render nothing) find object normal and material information and bounce off at X angle (depending on surfaces and normals) for Y number of bounces (defined in the render settings) or until it returns to a light source. Based on the information gathered from the secondary bounces (light reflected from nearby object or dedicated light sources or nothing) create an output colour corresponding to the pixel.
 
+We're using a thing called the rendering equation to calculate the light information on a given object
+
+![image](https://github.com/user-attachments/assets/e1fb8f76-a07e-4519-b5b4-be6c05d6a901)
+
+FROM WIKIPEIDA https://en.wikipedia.org/wiki/Rendering_equation
+
+Basically meaning for each incoming sample: measure the light from the source, take the reflective and diffuse properties of a material (BRDF) and measure the angle at which the ray hit. Adjust lighitng value accordingly to these factors. It isn't all encompassing of all the calculations required at render time but its a good overview of the line of thought.
+
+
+
 I WILL (HOPEFULLY) USE BOTH OF THESE TECHNIQUES FOR A PRETTY REAL TIME GI MACHINE 
 
 ## Breakdown
@@ -69,32 +79,31 @@ class Image{
 +save(_fname : const std::string &) : bool
 }
 
-class Rasterise{
+class RenderSetup{
 -zdepth : float
 -clipping distance : float
 -object transform : Mat4
 -camera transform : Mat4
+-lights transform : Mat4
+-zBuffer(CamPos : Zdepth)
+-imageBuffer(_w : size_t, _h : size_t)
+-pixelOutput(_w : size_t, _h : size_t)
+
+}
+
+class Rasterise{
 -local vertex position : Vec3[0..*]
 -faceColour: RGBA[0..*]
--imageBuffer(_w : size_t, _h : size_t)
--zBuffer(CamPos : Zdepth)
 -projectForwards(culDist : float, _w : size_t, _h : size_t)
--projectBack()
-
 
 }
 
 class Raytracer{
--zdepth : float
--clipping distance : float
--vertex position : Vec3[0..*]
--camera position : Vec3
--lights position : Vec3[0..*]
 -totalBounces : Int
 -Material information i need to figure out how to do this*
 -projectRays()
 -hitsObject()
--pixelOutput()
+-output()
 
 
 }
@@ -102,8 +111,9 @@ class Raytracer{
 
 
 Image --* RGBA
-Rasterise --|> Image
-Raytracer --|> Image
+RenderSetup --* Image
+Rasterise --|> RenderSetup
+Raytracer --|> RenderSetup
 
 ```
 
@@ -133,9 +143,14 @@ flowchart TD
     in1-->do1[Image Buffer]
     in1-->in2[/Obj&Cam&Light Pos/]
     in1-->do2[shoot rays perpixel]
-    do2 & in2-->if1{Hit?}
-    if1-- no -->do4[output final colour]
-    if1-- yes -->do3[take colour info & rebound]--->if1
+    do2 & in2-->if1{Max bounces?}
+    if1-- no -->if2{Hit Light?}
+    if2-- no -->if3{Hit object?}
+    do4[output final pixel colour]
+    if1-- yes -->do4
+    if2-- yes -->do4a[Get light info]-->do4
+    if3-- no -->do4
+    if3-- yes -->do3[Angle calc for BRDF]-->do3a[Light calc from Light + N + BRDF] -->do3b[Rebound]-->if1
     do1 & do4-->do7[Final Image]
     do7-->fin([END])
 ```
