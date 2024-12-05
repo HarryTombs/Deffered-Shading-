@@ -23,27 +23,36 @@ So since i've never touched openGL before I didn't know what i could do with it 
 
 I've gotten rid of all the stuff i did before since it was just confusing me
 
-### Instant raidosity
+### Instant radiosity
 
 This is what i should've been looking into this whole time
 
-Its based on this paper:
-https://www.cg.tuwien.ac.at/research/publications/2008/radax-2008-ir/radax-2008-ir-paper.pdf
+Its based on these papers:
 
-which itself is based on this paper but i found it too confusing:
+https://www.cg.tuwien.ac.at/research/publications/2008/radax-2008-ir/radax-2008-ir-paper.pdf
+https://speierers.github.io/resources/pdf/metropolis_vpl.pdf
+
+which themselves are based on this paper but i found it too confusing:
+
 http://luthuli.cs.uiuc.edu/~daf/courses/Rendering/Papers-2/keller97instant.pdf
 
 This project was also huge help:
+
 https://ktstephano.github.io/rendering/stratusgfx/frame_analysis_v0_10#realtime-global-illumination
 
 
-The technique involves creating indirect lighitng from reading info from virtual point lights. Virtual point lights are an invisible point light placed around the scene taking in the lighting information surrounding it. Then applys radience information to an object combined with the direct PBR lighting and the objects textures.
+The technique involves creating indirect lighitng from reading info from virtual point lights. Virtual point lights are an invisible point light placed around the scene taking in the lighting information surrounding it. Then applys radiance information to an object combined with the direct PBR lighting and the objects textures.
 
-**The Plan**
+You use a path tracer steming from each light source to scatter VPLs and use its distance from a light source and amount of bounces to reach to determin its contribution to the indirect lighting. This means you have light sources scattered in areas not accessable by the main light source. I've heard computer shaders work well for lightweight path tracing so i'll try that probably.
+
+
+
+**FLOWCHART**
 
 ```mermaid
 flowchart TD
-    in1[/OpenGL scene/]-->do1[scatter rays]-->do2[Place VPL upon hit]
+    in1[/OpenGL scene with light sources/]-->do1[Scatter rays from lights]-->do2[Place VPL upon hit]-->do3[Direct lighting pass with Shadow pass]-->do5a
+do2-->do4[Caluculate indirect with VPL visible to camera]-->do5[Filter results denoise]-->do5a[Shading and textures]-->do6[Merge to final image]
 
 ```
 
@@ -109,6 +118,18 @@ https://en.wikipedia.org/wiki/Rasterisation
 https://blogs.nvidia.com/blog/whats-difference-between-ray-tracing-rasterization/
 
 http://luthuli.cs.uiuc.edu/~daf/courses/Rendering/Papers-2/keller97instant.pdf#page=6&zoom=100,72,920
+
+https://www.diva-portal.org/smash/get/diva2:482587/FULLTEXT01.pdf
+
+https://www.csie.ntu.edu.tw/~cyy/courses/rendering/13fall/lectures/handouts/ManyLight-I.pdf
+
+https://is.muni.cz/th/payge/report.pdf
+
+https://github.com/rohith10/ForwardPlus-InstantRadiosity/blob/master/Documentation.pdf
+
+https://speierers.github.io/resources/pdf/metropolis_vpl.pdf
+
+
 
 
 ### Other
