@@ -148,6 +148,10 @@ https://en.wikipedia.org/wiki/Rendering_equation
 
 https://www.youtube.com/watch?v=gsZiJeaMO48
 
+https://www.youtube.com/watch?v=WQLPZKpnod8
+
+https://ogldev.org/
+
 https://ebookcentral.proquest.com/lib/bournemouth-ebooks/reader.action?docID=5754532&ppg=124#ppg=458
 
 
