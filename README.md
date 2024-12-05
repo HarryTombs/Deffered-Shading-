@@ -2,7 +2,7 @@
 *Harry Ben Brass Tombs*
 
 ## Realtime Global illumination
-This is the project i've decided on
+This **is** the project i've decided on
 
 The one suggested in the sample projects. This is me not trying to reinvent the wheel here. I get lighting systems and i know how they work already ,well enough to know (vaugely) how to approach this project, so doing a path tracer or something along those lines would interested me greatly. **I THINK IT WILL STILL BE VERY HARD** but i think its a more possible goal to achieve. 
 
@@ -17,152 +17,41 @@ i also looked into light field probes which is similar but not the same thing
 light field probes work by having light "sensors" place across the scene which bake the lighting information and apply it to nearby objects based on proximity
 They are exceptionally fast to run but don't provide the most accurate lighting setup, as poor placement can lead to light or shadows leaking into incorrect places
 
-## Razterisation
+## SO I GOT SOME THINGS WRONG
 
-Rasterisation is rendering images by directly projecting objects onto the pixels themselves, measuring the frame size and splating whats captured into the pixel it matches up to, to create the correct shape in the rendered image.
+So since i've never touched openGL before I didn't know what i could do with it so i thought i had to develop the rendering systems myself like rasterising BUT since we learned it in class just recently i've discovered i was incredibly wrong, SO we're back on track with global illumination, i'll work on it to catch up SORRY!!
 
-When first rendering an image buffer is created and the frame size is shot out into space and sees what objects it hits, technically infinite distance but usually stopped at a point. The depth in the cameras Z axis is captured in order to process z depth because we humans process z depth (we have two eyes).
-After that each vertex of each triangle of each object is projected forwards towards the camera, scaling to the calculated z depth size and the affected pixels are coloured in to create a 2D image
-## Ray Tracing
+I've gotten rid of all the stuff i did before since it was just confusing me
 
-Real life light works by light coming from a source and bouncing into your eye, a room can be lit without you being there to see it since real life doesn't require processing power
-Ray tracing works in the opposite way, A camera functioning as an eye shoots rays into a space and bounces off an object a specified number of times or until it finds a light source
-The colour of that pixel is calculated by the informaiton gathered by those bounces including nearby light sources, reflective objects or lack there of.
+### Instant raidosity
 
-In a 3D lit scene with a camera you take the resolution of the screen and for each pixel detailed in the camera shoot a ray throught the centre of the pixel. if it hits an object (otherwise render nothing) find object normal and material information and bounce off at X angle (depending on surfaces and normals) for Y number of bounces (defined in the render settings) or until it returns to a light source. Based on the information gathered from the secondary bounces (light reflected from nearby object or dedicated light sources or nothing) create an output colour corresponding to the pixel.
+This is what i should've been looking into this whole time
 
-We're using a thing called the rendering equation to calculate the light information on a given object
+Its based on this paper:
+https://www.cg.tuwien.ac.at/research/publications/2008/radax-2008-ir/radax-2008-ir-paper.pdf
 
-![image](https://github.com/user-attachments/assets/e1fb8f76-a07e-4519-b5b4-be6c05d6a901)
+which itself is based on this paper but i found it too confusing:
+http://luthuli.cs.uiuc.edu/~daf/courses/Rendering/Papers-2/keller97instant.pdf
 
-FROM WIKIPEIDA https://en.wikipedia.org/wiki/Rendering_equation
-
-Basically meaning for each incoming sample: measure the light from the source, take the reflective and diffuse properties of a material (BRDF) and measure the angle at which the ray hit. Adjust lighitng value accordingly to these factors. It isn't all encompassing of all the calculations required at render time but its a good overview of the line of thought.
+This project was also huge help:
+https://ktstephano.github.io/rendering/stratusgfx/frame_analysis_v0_10#realtime-global-illumination
 
 
+The technique involves creating indirect lighitng from reading info from virtual point lights. Virtual point lights are an invisible point light placed around the scene taking in the lighting information surrounding it. Then applys radience information to an object combined with the direct PBR lighting and the objects textures.
 
-I WILL (HOPEFULLY) USE BOTH OF THESE TECHNIQUES FOR A PRETTY REAL TIME GI MACHINE 
-
-## Breakdown
-
-### Class Diagram
-
-I'm going to be using the RGBA and Image classes we already made in class as well as my own class diagrams 
-
-Source is you Jon thanks &#128077;
-
-```mermaid
-classDiagram
-class RGBA~Struct~{
-+ pixels : uint32_t
-+ r : unsigned char
-+ g : unsigned char
-+ b : unsigned char
-+ a : unsigned char
-+ RGBA()
-+ RGBA(_r : unsigned char,_g : unsigned char,_b : unsigned char,_a : unsigned char)
-}
-
-class Image{
--m_width : size_t
--m_height : size_t
--m_pixels : std::unique_ptr<RGBA []>
-+Image()
-+Image(_w : size_t, _h : size_t)
-+Image(_w : size_t, _h : size_t, _r : unsigned char,_g : unsigned char,_b : unsigned char,_a : unsigned char)
-+width() : size_t
-+height() : size_t
-+getPixel(_x : size_t, _y : size_t) : RGBA
-+setPixel(_x : size_t, _y : size_t, _r : unsigned char,_g : unsigned char,_b : unsigned char,_a : unsigned char)
-+setPixel(_x : size_t, _y : size_t, _r : p : RGBA)
-+clear(_r : unsigned char, unsigned char,_g : unsigned char,_b : unsigned char,_a : unsigned char)
-+save(_fname : const std::string &) : bool
-}
-
-class RenderSetup{
--zdepth : float
--clipping distance : float
--object transform : Mat4
--camera transform : Mat4
--lights transform : Mat4
--zBuffer(CamPos : Zdepth)
--imageBuffer(_w : size_t, _h : size_t)
--pixelOutput(_w : size_t, _h : size_t)
-
-}
-
-class Rasterise{
--local vertex position : Vec3[0..*]
--faceColour: RGBA[0..*]
--projectForwards(culDist : float, _w : size_t, _h : size_t)
-
-}
-
-class Raytracer{
--totalBounces : Int
--Material information i need to figure out how to do this*
--projectRays()
--hitsObject()
--output()
-
-
-}
-
-
-
-Image --* RGBA
-RenderSetup --* Image
-Rasterise --|> RenderSetup
-Raytracer --|> RenderSetup
-
-```
-
-
-### Flowcharts
-
-Rasterisation
+**The Plan**
 
 ```mermaid
 flowchart TD
-    srt([START])-->in1[/Screen Resolution/]
-    in1-->in0[/Input Obj&Cam/]
-    in1-->do1[Image Buffer]
-    in0-->do4[Project Triangle Pos]
-    in0-->do2[Z Buffer]
-    do4 & do2-->do5[Project back by zdepth]
-    do5-->do6[Change affected pixel]
-    do1 & do6-->do7[Final Image]
-    do7-->fin([END])
+    in1[/OpenGL scene/]-->do1[scatter rays]-->do2[Place VPL upon hit]
+
 ```
-
-Raytracing
-
-```mermaid
-flowchart TD
-    srt([START])-->in1[/Screen Resolution/]
-    in1-->do1[Image Buffer]
-    in1-->in2[/Obj&Cam&Light Pos/]
-    in1-->do2[shoot rays perpixel]
-    do2 & in2-->if1{Max bounces?}
-    if1-- no -->if2{Hit Light?}
-    if2-- no -->if3{Hit object?}
-    do4[output final pixel colour]
-    if1-- yes -->do4
-    if2-- yes -->do4a[Get light info]-->do4
-    if3-- no -->do4
-    if3-- yes -->do3[Angle calc for BRDF]-->do3a[Light calc from Light + N + BRDF] -->do3b[Rebound]-->if1
-    do1 & do4-->do7[Final Image]
-    do7-->fin([END])
-```
-
-*Please let me know if im missing something*
 
 
 ## Sources
 
 I will cite these correctly later please excuse my poor referincing system for now
 
-### Ray tracing 
 https://en.wikipedia.org/wiki/Ray_tracing_(graphics)
 
 https://jcgt.org/published/0008/02/01/
@@ -193,7 +82,9 @@ https://www.gdcvault.com/play/1024353/
 
 https://in1weekend.blogspot.com/2016/01/ray-tracing-in-one-weekend.html
 
-### Rasterisation ish
+
+
+https://ktstephano.github.io/rendering/stratusgfx/frame_analysis_v0_10#realtime-global-illumination
 
 https://docs.unity3d.com/Manual/LightProbes.html
 
@@ -216,6 +107,8 @@ https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical
 https://en.wikipedia.org/wiki/Rasterisation
 
 https://blogs.nvidia.com/blog/whats-difference-between-ray-tracing-rasterization/
+
+http://luthuli.cs.uiuc.edu/~daf/courses/Rendering/Papers-2/keller97instant.pdf#page=6&zoom=100,72,920
 
 
 ### Other
