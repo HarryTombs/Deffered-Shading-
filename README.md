@@ -1,61 +1,35 @@
 # Programming project
 *Harry Ben Brass Tombs*
 
-## Realtime Global illumination
-This **is** the project i've decided on
+## sauces
 
-The one suggested in the sample projects. This is me not trying to reinvent the wheel here. I get lighting systems and i know how they work already ,well enough to know (vaugely) how to approach this project, so doing a path tracer or something along those lines would interested me greatly. **I THINK IT WILL STILL BE VERY HARD** but i think its a more possible goal to achieve. 
+https://learnopengl.com/Advanced-Lighting/Deferred-Shading
 
-A lot of papers i've found and talks i've listened to are from nvidia with pretty useful complete github pages of their RTXGI (global illumination) and RTXDI (dynamic illumination) SDKs. Which i will obviously be a great help for me to look at more direct uses of C++ implementation
-So there's no real way for me to come up with a revolutionary idea, but i guess thats not the point
+https://download.nvidia.com/developer/presentations/2004/6800_Leagues/6800_Leagues_Deferred_Shading.pdf
 
-I've learned im doing rasterisation first to figure things out because its the most common implementation of realtime GI 
-It involves computing an objects normals and using pre baked light maps to display realtime GI
-we can combine rasterisation with a quicker form or ray tracing to get a pretty nice looking real time GI solution
+https://github.com/NCCA/Sponza
 
-i also looked into light field probes which is similar but not the same thing
-light field probes work by having light "sensors" place across the scene which bake the lighting information and apply it to nearby objects based on proximity
-They are exceptionally fast to run but don't provide the most accurate lighting setup, as poor placement can lead to light or shadows leaking into incorrect places
+https://github.com/NCCA/FBODemos/blob/main/DeferredShading/include/FrameBufferObject.h
 
-## SO I GOT SOME THINGS WRONG
+http://www.codinglabs.net/tutorial_simple_def_rendering.aspx
 
-So since i've never touched openGL before I didn't know what i could do with it so i thought i had to develop the rendering systems myself like rasterising BUT since we learned it in class just recently i've discovered i was incredibly wrong, SO we're back on track with global illumination, i'll work on it to catch up SORRY!!
+https://my.eng.utah.edu/~cs5600/slides/Wk%209%20D3DTutorial_DeferredShading.pdf
 
-I've gotten rid of all the stuff i did before since it was just confusing me
+https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-9-deferred-shading-stalker
 
-### Instant radiosity
+### That game blog
 
-This is what i should've been looking into this whole time
+https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/
 
-Its based on these papers:
+**METRO** http://morad.in/2019/03/27/observations-about-the-rendering-of-metro-exodus/
 
-https://www.cg.tuwien.ac.at/research/publications/2008/radax-2008-ir/radax-2008-ir-paper.pdf
-https://speierers.github.io/resources/pdf/metropolis_vpl.pdf
+**Cyberpunk** https://c0de517e.blogspot.com/2020/12/hallucinations-re-rendering-of.html
 
-which themselves are based on this paper but i found it too confusing:
+**GTA V** https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/
 
-http://luthuli.cs.uiuc.edu/~daf/courses/Rendering/Papers-2/keller97instant.pdf
+**Deux Ex** https://www.adriancourreges.com/blog/2015/03/10/deus-ex-human-revolution-graphics-study/
 
-This project was also huge help:
-
-https://ktstephano.github.io/rendering/stratusgfx/frame_analysis_v0_10#realtime-global-illumination
-
-
-The technique involves creating indirect lighitng from reading info from virtual point lights. Virtual point lights are an invisible point light placed around the scene taking in the lighting information surrounding it. Then applys radiance information to an object combined with the direct PBR lighting and the objects textures.
-
-You use a path tracer steming from each light source to scatter VPLs and use its distance from a light source and amount of bounces to reach to determin its contribution to the indirect lighting. This means you have light sources scattered in areas not accessable by the main light source. I've heard computer shaders work well for lightweight path tracing so i'll try that probably.
-
-
-
-**FLOWCHART**
-
-```mermaid
-flowchart TD
-    in1[/OpenGL scene with light sources/]-->do1[Scatter rays from lights]-->do2[Place VPL upon hit]-->do3[Direct lighting pass with Shadow pass]-->do5a
-do2-->do4[Caluculate indirect with VPL visible to camera]-->do5[Filter results denoise]-->do5a[Shading and textures]-->do6[Merge to final image]
-
-```
-
+**Nino Kuni** https://blog.thomaspoulet.fr/ninokuni2-frame/
 
 ## Sources
 
