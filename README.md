@@ -17,6 +17,10 @@ https://my.eng.utah.edu/~cs5600/slides/Wk%209%20D3DTutorial_DeferredShading.pdf
 
 https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-9-deferred-shading-stalker
 
+https://jose-villegas.github.io/post/deferred_voxel_shading/
+
+
+
 ### That game blog
 
 https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/
@@ -65,7 +69,7 @@ https://www.gdcvault.com/play/1024353/
 
 https://in1weekend.blogspot.com/2016/01/ray-tracing-in-one-weekend.html
 
-
+https://jsantell.com/model-view-projection/
 
 https://ktstephano.github.io/rendering/stratusgfx/frame_analysis_v0_10#realtime-global-illumination
 
