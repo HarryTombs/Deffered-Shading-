@@ -4,17 +4,16 @@
 #include "NGLScene.h"
 #include <ngl/NGLInit.h>
 #include <ngl/ShaderLib.h>
-
-#include "Shaders.h"
-
 #include <ngl/VAOPrimitives.h>
 #include <iostream>
 #include <oneapi/tbb/info.h>
+#include <OpenImageIO/imageio.h>
+using namespace OIIO;
 
 NGLScene::NGLScene()
 {
   // re-size the widget to that of the parent (in this case the GLFrame passed in on construction)
-  setTitle("Blank NGL");
+  setTitle("Render");
 }
 
 
@@ -31,8 +30,6 @@ void NGLScene::resizeGL(int _w , int _h)
   m_win.height = static_cast<int>( _h * devicePixelRatio() );
 }
 
-
-
 void NGLScene::initializeGL()
 {
   // we must call that first before any other GL commands to load and link the
@@ -43,34 +40,26 @@ void NGLScene::initializeGL()
   glEnable(GL_DEPTH_TEST);
   // enable multisampling for smoother drawing
   glEnable(GL_MULTISAMPLE);
-
+  ngl::ShaderLib::loadShader("ParticleShader","shaders/DSVertext.glsl","shaders/DSFragment.glsl");
 
 
 }
+
 
 void NGLScene::paintGL()
 {
   // clear the screen and depth buffer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0,m_win.width,m_win.height);
+
+
    float vertices[] = {
      // Triangle 1
-     0.0f, 0.5f, 0.0f,    1.0f, 0.0f, 0.0f,
-     -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
-     0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f
-     // // Triangle 2
-     // -0.5f, 0.5f, 0.0f,
-     // 0.0f, -0.5f, 0.0f,
-     // -1.0f, -0.5f, 0.0f,
-     // // Triangle 3
-     // 0.0f, 0.9, 0.0f,
-     // 0.2f, 0.5, 0.0f,
-     // -0.2f, 0.5, 0.0f,
+     0.0f, 0.5f, 0.0f,    1.0f, 0.0f, 0.0f,  // 0.0f, 0.0f,
+     -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // 1.0f, 0.0f,
+     0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,  // 0.5f, 1.0f
+
    };
-   // unsigned int indices[] = {
-   //    0,1,3,
-   //    1,2,3
-   // };
 
 
   //  **ARRAYS AND BUFFERS**
@@ -89,24 +78,56 @@ void NGLScene::paintGL()
   // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 
+  // TEXTURE
+
+  unsigned int texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T, GL_REPEAT);
+  //
+  // ImageInput::unique_ptr inp = ImageInput::open("wall.jpg");
+  // if(!inp)
+  // {
+  //   std::cout << "FAILED TO LOAD TEXTURE\n";
+  // }
+  // else
+  // {
+  //   const ImageSpec &spec = inp->spec();
+  //   int width = spec.width;
+  //   int height = spec.height;
+  //   int nrChannels = spec.nchannels;
+  //   auto pixels = std::unique_ptr<unsigned char[]>(new unsigned char[width * height * nrChannels]);
+  //   inp->read_image(0, 0, 0, nrChannels, TypeDesc::UINT8, &pixels[0]);
+  //   inp->close();
+  //   glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,width,height,0,GL_RGB, GL_UNSIGNED_BYTE, inp);
+  //   glGenerateMipmap(GL_TEXTURE_2D);
+  // }
+
+
+
+
+
+
+
   // SHADERS
 
-  Shader ourShader("~/Desktop/Bournemouth/ASE/ASElabs/Raytracer/shaders/RTvertex.glsl","~/Desktop/Bournemouth/ASE/ASElabs/Raytracer/shaders/RTfragment.glsl");
-
-
+  ngl::ShaderLib::use("ParticleShader");
 
   glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)0);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)(3* sizeof(float)));
   glEnableVertexAttribArray(1);
+  // glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(6* sizeof(float)));
+  // glEnableVertexAttribArray(2);
 
 
-  ourShader.use();
-  glBindVertexArray(VAO);
 
   // Count and Draw
   int vertcount = sizeof(vertices) / (sizeof(vertices[0])*3);
 
+  // glBindTexture(GL_TEXTURE_2D,texture);
+  glBindVertexArray(VAO);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glDrawArrays(GL_TRIANGLES,0, vertcount);
 }
