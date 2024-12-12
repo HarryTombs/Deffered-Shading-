@@ -1,7 +1,7 @@
 # Programming project
 *Harry Ben Brass Tombs*
 
-## sauces
+## Sources
 
 https://learnopengl.com/Advanced-Lighting/Deferred-Shading
 
@@ -35,7 +35,7 @@ https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/
 
 **Nino Kuni** https://blog.thomaspoulet.fr/ninokuni2-frame/
 
-## Sources
+## Extra Sources
 
 I will cite these correctly later please excuse my poor referincing system for now
 
