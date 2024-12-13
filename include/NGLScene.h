@@ -84,6 +84,8 @@ private:
     /// position for our model
     ngl::Vec3 m_modelPos;
 
+    GLuint textureID;
+
 
 };
 

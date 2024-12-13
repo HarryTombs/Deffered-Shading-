@@ -5,10 +5,9 @@
 #include <ngl/NGLInit.h>
 #include <ngl/ShaderLib.h>
 #include <ngl/VAOPrimitives.h>
+#include <ngl/Texture.h>
 #include <iostream>
 #include <oneapi/tbb/info.h>
-#include <OpenImageIO/imageio.h>
-using namespace OIIO;
 
 NGLScene::NGLScene()
 {
@@ -45,6 +44,15 @@ void NGLScene::initializeGL()
 
 }
 
+float vertices[] = {
+  // Triangle 1
+  0.0f, 0.5f, 0.0f,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+  -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+  0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f
+
+};
+unsigned int VAO, VBO;
+
 
 void NGLScene::paintGL()
 {
@@ -53,19 +61,12 @@ void NGLScene::paintGL()
   glViewport(0,0,m_win.width,m_win.height);
 
 
-   float vertices[] = {
-     // Triangle 1
-     0.0f, 0.5f, 0.0f,    1.0f, 0.0f, 0.0f,  // 0.0f, 0.0f,
-     -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // 1.0f, 0.0f,
-     0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,  // 0.5f, 1.0f
-
-   };
 
 
-  //  **ARRAYS AND BUFFERS**
+
+    //  **ARRAYS AND BUFFERS**
 
 
-  unsigned int VAO, VBO;
   glGenVertexArrays(1,&VAO);
   glBindVertexArray(VAO);
    glGenBuffers(1, &VBO);
@@ -79,32 +80,13 @@ void NGLScene::paintGL()
 
 
   // TEXTURE
-
-  unsigned int texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  const ngl::Texture texture("textures/ratGrid.png");
+  textureID = texture.setTextureGL();
+  glGenTextures(1, &textureID);
+  glBindTexture(GL_TEXTURE_2D, textureID);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T, GL_REPEAT);
-  //
-  // ImageInput::unique_ptr inp = ImageInput::open("wall.jpg");
-  // if(!inp)
-  // {
-  //   std::cout << "FAILED TO LOAD TEXTURE\n";
-  // }
-  // else
-  // {
-  //   const ImageSpec &spec = inp->spec();
-  //   int width = spec.width;
-  //   int height = spec.height;
-  //   int nrChannels = spec.nchannels;
-  //   auto pixels = std::unique_ptr<unsigned char[]>(new unsigned char[width * height * nrChannels]);
-  //   inp->read_image(0, 0, 0, nrChannels, TypeDesc::UINT8, &pixels[0]);
-  //   inp->close();
-  //   glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,width,height,0,GL_RGB, GL_UNSIGNED_BYTE, inp);
-  //   glGenerateMipmap(GL_TEXTURE_2D);
-  // }
 
-
+  glBindVertexArray(VAO);
 
 
 
@@ -114,12 +96,12 @@ void NGLScene::paintGL()
 
   ngl::ShaderLib::use("ParticleShader");
 
-  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)0);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)0);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)(3* sizeof(float)));
+  glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(3* sizeof(float)));
   glEnableVertexAttribArray(1);
-  // glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(6* sizeof(float)));
-  // glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(6* sizeof(float)));
+  glEnableVertexAttribArray(2);
 
 
 
@@ -127,7 +109,7 @@ void NGLScene::paintGL()
   int vertcount = sizeof(vertices) / (sizeof(vertices[0])*3);
 
   // glBindTexture(GL_TEXTURE_2D,texture);
-  glBindVertexArray(VAO);
+
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glDrawArrays(GL_TRIANGLES,0, vertcount);
 }
