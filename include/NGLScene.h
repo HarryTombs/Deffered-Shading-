@@ -83,10 +83,12 @@ private:
     WinParams m_win;
     /// position for our model
     ngl::Vec3 m_modelPos;
+    ngl::Mat4 m_view;
+    ngl::Mat4 m_projection;
+    ngl::Mat4 m_mouseGlobalTX;
 
-    GLuint textureID;
 
-
+    void loadMatricesToShader();
 };
 
 
