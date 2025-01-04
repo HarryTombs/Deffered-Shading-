@@ -2,9 +2,11 @@
 #define NGLSCENE_H_
 #include <ngl/Vec3.h>
 #include <ngl/Mat4.h>
+#include <ngl/Obj.h>
 #include "WindowParams.h"
 // this must be included after NGL includes else we get a clash with gl libs
 #include <QOpenGLWindow>
+#include <memory>
 //----------------------------------------------------------------------------------------------------------------------
 /// @file NGLScene.h
 /// @brief this class inherits from the Qt OpenGLWindow and allows us to use NGL to draw OpenGL
@@ -25,7 +27,7 @@ class NGLScene : public QOpenGLWindow
     /// @brief ctor for our NGL drawing class
     /// @param [in] parent the parent window to the class
     //----------------------------------------------------------------------------------------------------------------------
-    NGLScene();
+    NGLScene(const std::string &_objName, const std::string &_texName);
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief dtor must close down ngl and release OpenGL resources
     //----------------------------------------------------------------------------------------------------------------------
@@ -86,6 +88,10 @@ private:
     ngl::Mat4 m_view;
     ngl::Mat4 m_projection;
     ngl::Mat4 m_mouseGlobalTX;
+    std::unique_ptr<ngl::Obj> m_mesh;
+
+    std::string m_objFileName;
+    std::string m_texFileName;
 
 
     void loadMatricesToShader();

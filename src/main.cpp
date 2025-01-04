@@ -28,8 +28,11 @@ int main(int argc, char **argv)
   format.setProfile(QSurfaceFormat::CoreProfile);
   // now set the depth buffer to 24 bits
   format.setDepthBufferSize(24);
+
+  std::string ObjName("models/test.obj");
+  std::string TexName("textures/wall.jpg");
   // now we are going to create our scene window
-  NGLScene window;
+  NGLScene window(ObjName,TexName);
   // and set the OpenGL format
   window.setFormat(format);
   // we can now query the version to see if it worked

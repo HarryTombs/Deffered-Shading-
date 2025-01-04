@@ -53,4 +53,12 @@ add_custom_target(${TargetName}CopyShaders ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders
     $<TARGET_FILE_DIR:${TargetName}>/shaders
+
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/textures
+        $<TARGET_FILE_DIR:${TargetName}>/textures
+
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/models
+        $<TARGET_FILE_DIR:${TargetName}>/models
 )
