@@ -89,14 +89,27 @@ private:
     ngl::Mat4 m_projection;
     ngl::Mat4 m_mouseGlobalTX;
     std::unique_ptr<ngl::Obj> m_mesh;
-
     std::string m_objFileName;
     std::string m_texFileName;
+
+
 
 
     void loadMatricesToShader();
 };
 
+class Mesh
+{
+    std::string m_OBJFilename;
+    std::string m_TEXFilename;
+    std::unique_ptr<ngl::Obj> m_MESH;
+public:
+    Mesh() : m_OBJFilename("models/test.obj"), m_TEXFilename("textures/ratGrid.png"){}
+    Mesh(const std::string &_OBJname, const std::string &_TEXname);
+    void CreateVAO();
+    void Draw();
+
+};
 
 
 #endif
