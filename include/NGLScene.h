@@ -3,9 +3,13 @@
 #include <ngl/Vec3.h>
 #include <ngl/Mat4.h>
 #include <ngl/Obj.h>
+#include <ngl/Transformation.h>
 #include "WindowParams.h"
+#include "Mesh.h"
+#include "FirstPersonCamera.h"
 // this must be included after NGL includes else we get a clash with gl libs
 #include <QOpenGLWindow>
+#include <QElapsedTimer>
 #include <memory>
 //----------------------------------------------------------------------------------------------------------------------
 /// @file NGLScene.h
@@ -37,6 +41,9 @@ class NGLScene : public QOpenGLWindow
     /// use this to setup any default GL stuff
     //----------------------------------------------------------------------------------------------------------------------
     void initializeGL() override;
+    void loadMatricesToShader();
+    void loadMatricesToShader(Mesh mesh);
+
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief this is called everytime we want to draw the scene
     //----------------------------------------------------------------------------------------------------------------------
@@ -48,7 +55,8 @@ class NGLScene : public QOpenGLWindow
     //----------------------------------------------------------------------------------------------------------------------
     /// IMAGE INPUT
     //----------------------------------------------------------------------------------------------------------------------
-    void readImageTex(const char filename);
+    int m_meshNum = 1;
+    std::vector<Mesh> m_MeshArray;
 
 private:
 
@@ -91,25 +99,18 @@ private:
     std::unique_ptr<ngl::Obj> m_mesh;
     std::string m_objFileName;
     std::string m_texFileName;
+    FirstPersonCamera m_cam;
+    QElapsedTimer m_timer;
+    float m_deltatime = 0.0f;
+    float m_lastframe = 0.0f;
+    QSet<Qt::Key> m_keysPressed;
 
 
 
 
-    void loadMatricesToShader();
-};
-
-class Mesh
-{
-    std::string m_OBJFilename;
-    std::string m_TEXFilename;
-    std::unique_ptr<ngl::Obj> m_MESH;
-public:
-    Mesh() : m_OBJFilename("models/test.obj"), m_TEXFilename("textures/ratGrid.png"){}
-    Mesh(const std::string &_OBJname, const std::string &_TEXname);
-    void CreateVAO();
-    void Draw();
 
 };
+
 
 
 #endif

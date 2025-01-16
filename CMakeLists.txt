@@ -43,8 +43,12 @@ include_directories(include $ENV{HOME}/NGL/include)
 target_sources(${TargetName} PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp  
 			${PROJECT_SOURCE_DIR}/src/NGLScene.cpp  
 			${PROJECT_SOURCE_DIR}/src/NGLSceneMouseControls.cpp  
+			${PROJECT_SOURCE_DIR}/src/FirstPersonCamera.cpp
 			${PROJECT_SOURCE_DIR}/include/NGLScene.h
 			${PROJECT_SOURCE_DIR}/include/Shaders.h
+            ${PROJECT_SOURCE_DIR}/include/Mesh.h
+            ${PROJECT_SOURCE_DIR}/include/FirstPersonCamera.h
+
 )
 
 target_link_libraries(${TargetName} PRIVATE Qt::Widgets Qt::OpenGL NGL)
