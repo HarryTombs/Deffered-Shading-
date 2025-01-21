@@ -26,9 +26,6 @@ void Mesh::CreateVAO()
 
 void Mesh::Transform(float _xDif, float _yDif, float _zDif)
 {
-  // m_POS.m_x += _xDif;
-  // m_POS.m_y += _yDif;
-  // m_POS.m_z += _zDif;
   m_TRANS.addPosition(_xDif,_yDif,_zDif);
 }
 
@@ -60,6 +57,9 @@ void NGLScene::resizeGL(int _w , int _h)
   m_win.height = static_cast<int>( _h * devicePixelRatio() );
 }
 
+unsigned int gBuffer;
+unsigned int gPos, gNorm, gColorSpec;
+
 void NGLScene::initializeGL()
 {
   // we must call that first before any other GL commands to load and link the
@@ -82,8 +82,35 @@ void NGLScene::initializeGL()
   int w = this->size().width();
   int h = this->size().height();
 
+  glGenFramebuffers(1,&gBuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+
+  glGenTextures(1, &gPos);
+  glBindTexture(GL_TEXTURE_2D, gPos);
+  glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA16F, m_win.width,m_win.height,0,GL_RGBA,GL_FLOAT,NULL);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,gPos,0);
+
+  glGenTextures(1, &gNorm);
+  glBindTexture(GL_TEXTURE_2D, gNorm);
+  glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA16F, m_win.width,m_win.height,0,GL_RGBA,GL_FLOAT,NULL);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,gNorm,0);
+
+  glGenTextures(1, &gColorSpec);
+  glBindTexture(GL_TEXTURE_2D, gColorSpec);
+  glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA16F, m_win.width,m_win.height,0,GL_RGBA,GL_FLOAT,NULL);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D,gColorSpec,0);
+
+  unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2};
+  glDrawBuffers(3, attachments);
 
   mesh1.CreateVAO();
+  // mesh1.Transform(1.0f,1.0f,1.0f);
 
   glViewport(0, 0, width(), height());
 
@@ -92,19 +119,25 @@ void NGLScene::initializeGL()
 
 void NGLScene::loadMatricesToShader()
 {
-  ngl::Mat4 MV;
-  ngl::Mat4 MVP;
-  // ngl::Mat3 normalMatrix;
+  ngl::Mat3 normalMatrix;
   ngl::Mat4 M;
-  M = mesh1.m_TRANS.getMatrix();
-  MV = m_cam.getView() * M;
-  MVP = m_cam.getProjection() * MV;
-  // normalMatrix = MV;
-  // normalMatrix.inverse().transpose();
-  ngl::ShaderLib::setUniform("MVP", MVP);
-  // ngl::ShaderLib::setUniform("normalMatrix", normalMatrix);
+  ngl::Mat4 V;
+  ngl::Mat4 P;
 
-  // // saving the normals for later
+  M = mesh1.m_TRANS.getMatrix();
+  V = m_cam.getView();
+  P = m_cam.getProjection();
+
+  normalMatrix = ngl::Mat3(M*V);
+  normalMatrix.inverse().transpose();
+
+  ngl::ShaderLib::use("ParticleShader");
+  GLuint programID = ngl::ShaderLib::getProgramID("ParticleShader");
+
+  glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,M.openGL());
+  glUniformMatrix4fv(glGetUniformLocation(programID,"View"),1,GL_FALSE,V.openGL());
+  glUniformMatrix4fv(glGetUniformLocation(programID,"Projection"),1,GL_FALSE,P.openGL());
+  glUniformMatrix3fv(glGetUniformLocation(programID,"normalMatrix"),1,GL_FALSE,normalMatrix.openGL());
 }
 
 void NGLScene::paintGL()
@@ -112,8 +145,6 @@ void NGLScene::paintGL()
   // clear the screen and depth buffer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0,m_win.width,m_win.height);
-  // TRANSFORMS
-
 
 
   float currentFrame = m_timer.elapsed() * 0.001f;
@@ -130,38 +161,6 @@ void NGLScene::paintGL()
   m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
 
 
-
-  // SHADERS
-
-  ngl::ShaderLib::use("ParticleShader");
-
-  // ngl::Mat4 MV;
-  // ngl::Mat4 MVP;
-  // // ngl::Mat3 normalMatrix;
-  // ngl::Mat4 M;
-  // int i = 0;
-  // for (auto &m : m_MeshArray)
-  // {
-  //   m.CreateVAO();
-  //
-  //   // SILLY
-  //   m.Transform(0.0f,0.0f,float(i));
-  //   // STUPID this changes everytime opengl update this is a silly way to do this
-  //
-  //   M = m.m_TRANS.getMatrix();
-  //   MV = m_cam.getView() * M;
-  //   MVP = m_cam.getProjection() * MV;
-  //   // normalMatrix = MV;
-  //   // normalMatrix.inverse().transpose();
-  //   ngl::ShaderLib::setUniform("MVP", MVP);
-  //   m.Draw();
-  //   ++i;
-  //
-  // }
-
-
-
-  //mesh1.Transform(0.0f,0.0f,0.0f);
   loadMatricesToShader();
   mesh1.Draw();
 
@@ -198,6 +197,18 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
     break;
   case Qt::Key_S :
     m_cam.Move(-1.0,0.0,m_deltatime);
+    break;
+  case Qt::Key_Up :
+    mesh1.Transform(0.0,0.5,0.0);
+    break;
+  case Qt::Key_Down :
+    mesh1.Transform(0.0,-0.5,0.0);
+    break;
+  case Qt::Key_Left :
+    mesh1.Transform(-0.5,0.0,0.0);
+    break;
+  case Qt::Key_Right :
+    mesh1.Transform(0.5,0.0,0.0);
     break;
 
 

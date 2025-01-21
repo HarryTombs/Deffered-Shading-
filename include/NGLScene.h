@@ -55,8 +55,7 @@ class NGLScene : public QOpenGLWindow
     //----------------------------------------------------------------------------------------------------------------------
     /// IMAGE INPUT
     //----------------------------------------------------------------------------------------------------------------------
-    int m_meshNum = 1;
-    std::vector<Mesh> m_MeshArray;
+
 
 private:
 
@@ -104,7 +103,16 @@ private:
     float m_deltatime = 0.0f;
     float m_lastframe = 0.0f;
     QSet<Qt::Key> m_keysPressed;
+    struct Lights
+    {
+        ngl::Vec3 lightPos;
+        ngl::Vec3 lightCol;
+        float lightintensity;
+        void lightChangePos ();
+    };
 
+    int numLights = 20;
+    std::vector<Lights> m_lightArray;
 
 
 

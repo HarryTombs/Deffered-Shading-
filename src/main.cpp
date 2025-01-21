@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   // now set the depth buffer to 24 bits
   format.setDepthBufferSize(24);
 
-  std::string ObjName("models/test.obj");
+  std::string ObjName("models/test2.obj");
   std::string TexName("textures/wall.jpg");
   // now we are going to create our scene window
   NGLScene window(ObjName,TexName);

@@ -14,15 +14,15 @@ public:
     ngl::Vec3 worldUp = ngl::Vec3(0.0f,1.0f,0.0f); // World Up
     ngl::Vec3 camFront; //Where the camera is looking
     ngl::Vec3 camRight; // Right of the camera
-    ngl::Mat4 m_view;
-    ngl::Mat4 m_projection;
+    ngl::Mat4 m_view; // view matrix
+    ngl::Mat4 m_projection; // projection matrix
     ngl::Real m_FOV = 45.0f;
     ngl::Real m_aspect = 1.2f;
     ngl::Real m_near = 0.1f;
     ngl::Real m_far = 100.0f;
     ngl::Real m_yaw = -90.0f;
     ngl::Real m_pitch = 0.0f;
-    ngl::Real m_speed = 2.5f;
+    ngl::Real m_speed = 1.5f;
     ngl::Real m_sensitivity = 0.1f;
 
     int width;

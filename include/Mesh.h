@@ -18,7 +18,7 @@ class Mesh
 
     std::unique_ptr<ngl::Obj> m_MESH;
 public:
-    Mesh() : m_OBJFilename("models/test.obj"), m_TEXFilename("textures/ratGrid.png"){}
+    Mesh() : m_OBJFilename("models/test2.obj"), m_TEXFilename("textures/ratGrid.png"){}
     Mesh(const std::string &_OBJname, const std::string &_TEXname)
         : m_OBJFilename(_OBJname), m_TEXFilename(_TEXname) {}
     void CreateVAO();
