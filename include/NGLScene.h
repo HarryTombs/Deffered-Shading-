@@ -11,6 +11,9 @@
 #include <QOpenGLWindow>
 #include <QElapsedTimer>
 #include <memory>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 //----------------------------------------------------------------------------------------------------------------------
 /// @file NGLScene.h
 /// @brief this class inherits from the Qt OpenGLWindow and allows us to use NGL to draw OpenGL
@@ -41,8 +44,7 @@ class NGLScene : public QOpenGLWindow
     /// use this to setup any default GL stuff
     //----------------------------------------------------------------------------------------------------------------------
     void initializeGL() override;
-    void loadMatricesToShader();
-    void loadMatricesToShader(Mesh mesh);
+    void loadMatricesToShader(std::string ProgramName);
 
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief this is called everytime we want to draw the scene
@@ -56,6 +58,9 @@ class NGLScene : public QOpenGLWindow
     /// IMAGE INPUT
     //----------------------------------------------------------------------------------------------------------------------
 
+    GLuint CreateShader(const std::string& filePath, GLenum shaderType);
+    std::string readShaderFromFile(const std::string& filePath);
+    std::string useProgram = "ParticleShader";
 
 private:
 

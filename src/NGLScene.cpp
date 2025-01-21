@@ -59,6 +59,10 @@ void NGLScene::resizeGL(int _w , int _h)
 
 unsigned int gBuffer;
 unsigned int gPos, gNorm, gColorSpec;
+unsigned int gBuffProgram;
+unsigned int lightingProgram;
+
+
 
 void NGLScene::initializeGL()
 {
@@ -71,7 +75,15 @@ void NGLScene::initializeGL()
   // enable multisampling for smoother drawing
   glEnable(GL_MULTISAMPLE);
 
+
+
   ngl::ShaderLib::loadShader("ParticleShader","shaders/DSVertext.glsl","shaders/DSFragment.glsl");
+  ngl::ShaderLib::loadShader("GBufferShader","shaders/DSVertext.glsl","shaders/LightFragment.glsl");
+
+  // ngl::ShaderLib::createShaderProgram("GbuffProgram",ngl::ErrorExit::ON);
+  // ngl::ShaderLib::attachShaderToProgram("GbuffProgram","shaders/DSVertext.glsl");
+  // ngl::ShaderLib::attachShaderToProgram("GbuffProgram","/shaders/DSFragment.glsl");
+  // ngl::ShaderLib::createShaderProgram("LightProgram");
 
   ngl::Vec3 from(0, 1, 5);
   ngl::Vec3 to(0, 0, 0);
@@ -117,7 +129,7 @@ void NGLScene::initializeGL()
 }
 
 
-void NGLScene::loadMatricesToShader()
+void NGLScene::loadMatricesToShader(std::string ProgramName)
 {
   ngl::Mat3 normalMatrix;
   ngl::Mat4 M;
@@ -131,14 +143,16 @@ void NGLScene::loadMatricesToShader()
   normalMatrix = ngl::Mat3(M*V);
   normalMatrix.inverse().transpose();
 
-  ngl::ShaderLib::use("ParticleShader");
-  GLuint programID = ngl::ShaderLib::getProgramID("ParticleShader");
+  ngl::ShaderLib::use(ProgramName);
+  GLuint programID = ngl::ShaderLib::getProgramID(ProgramName);
 
   glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,M.openGL());
   glUniformMatrix4fv(glGetUniformLocation(programID,"View"),1,GL_FALSE,V.openGL());
   glUniformMatrix4fv(glGetUniformLocation(programID,"Projection"),1,GL_FALSE,P.openGL());
   glUniformMatrix3fv(glGetUniformLocation(programID,"normalMatrix"),1,GL_FALSE,normalMatrix.openGL());
 }
+
+
 
 void NGLScene::paintGL()
 {
@@ -161,7 +175,7 @@ void NGLScene::paintGL()
   m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
 
 
-  loadMatricesToShader();
+  loadMatricesToShader(useProgram);
   mesh1.Draw();
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -210,7 +224,12 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
   case Qt::Key_Right :
     mesh1.Transform(0.5,0.0,0.0);
     break;
-
+  case Qt::Key_N :
+    useProgram = "GBufferShader";
+    break;
+  case Qt::Key_M :
+    useProgram = "ParticleShader";
+    break;
 
   break;
 

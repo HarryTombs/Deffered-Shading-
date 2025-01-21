@@ -45,7 +45,6 @@ target_sources(${TargetName} PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 			${PROJECT_SOURCE_DIR}/src/NGLSceneMouseControls.cpp  
 			${PROJECT_SOURCE_DIR}/src/FirstPersonCamera.cpp
 			${PROJECT_SOURCE_DIR}/include/NGLScene.h
-			${PROJECT_SOURCE_DIR}/include/Shaders.h
             ${PROJECT_SOURCE_DIR}/include/Mesh.h
             ${PROJECT_SOURCE_DIR}/include/FirstPersonCamera.h
 
