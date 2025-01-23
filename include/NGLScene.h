@@ -58,9 +58,10 @@ class NGLScene : public QOpenGLWindow
     /// IMAGE INPUT
     //----------------------------------------------------------------------------------------------------------------------
 
+
+
     GLuint CreateShader(const std::string& filePath, GLenum shaderType);
     std::string readShaderFromFile(const std::string& filePath);
-    std::string useProgram = "ParticleShader";
 
 private:
 
@@ -108,17 +109,12 @@ private:
     float m_deltatime = 0.0f;
     float m_lastframe = 0.0f;
     QSet<Qt::Key> m_keysPressed;
-    struct Lights
-    {
-        ngl::Vec3 lightPos;
-        ngl::Vec3 lightCol;
-        float lightintensity;
-        void lightChangePos ();
-    };
 
+    ngl::Vec3 lightPos = ngl::Vec3(-1,4,4);
+    ngl::Vec3 lightCol = ngl::Vec3(1,1,1);
     int numLights = 20;
-    std::vector<Lights> m_lightArray;
 
+    void renderQuad();
 
 
 

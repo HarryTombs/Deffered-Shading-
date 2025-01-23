@@ -4,12 +4,13 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoord;
 uniform sampler2D tex;
-layout (location=0)out vec4 FragColor;
+layout (location=0)out vec3 gPos;
+layout (location=1)out vec3 gNorm;
+layout (location=2)out vec4 gColorSpec;
 
 void main()
 {
-    float ambientStrength = 0.1;
-//    FragColor = vec4(FragPos,1.0); //<--¬
-//    FragColor = vec4(Normal,1.0); // <---- For testing
-    FragColor = texture(tex,TexCoord);
+    gPos = FragPos;
+    gNorm = normalize(Normal);
+    gColorSpec = texture(tex,TexCoord);
 }

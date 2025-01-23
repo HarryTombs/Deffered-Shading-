@@ -31,6 +31,34 @@ void Mesh::Transform(float _xDif, float _yDif, float _zDif)
 
 Mesh mesh1;
 
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+
+void NGLScene::renderQuad()
+{
+  if (quadVAO == 0 )
+  {
+    float quadVerticies[] = {
+      -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+      -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+      1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+      1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    };
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(quadVerticies),&quadVerticies,GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3,GL_FLOAT, GL_FALSE, 5 * sizeof(float),(void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2,GL_FLOAT, GL_FALSE, 5 * sizeof(float),(void*)(3*sizeof(float)));
+  }
+  glBindVertexArray(quadVAO);
+  glDrawArrays(GL_TRIANGLE_STRIP,0,4);
+  glBindVertexArray(0);
+}
+
 
 NGLScene::NGLScene(const std::string &_objName, const std::string &_texName)
 {
@@ -77,8 +105,8 @@ void NGLScene::initializeGL()
 
 
 
-  ngl::ShaderLib::loadShader("ParticleShader","shaders/DSVertext.glsl","shaders/DSFragment.glsl");
-  ngl::ShaderLib::loadShader("GBufferShader","shaders/DSVertext.glsl","shaders/LightFragment.glsl");
+  ngl::ShaderLib::loadShader("GbufferShader","shaders/DSVertext.glsl","shaders/DSFragment.glsl");
+  ngl::ShaderLib::loadShader("LightingShader","shaders/LightVertex.glsl","shaders/LightFragment.glsl");
 
   // ngl::ShaderLib::createShaderProgram("GbuffProgram",ngl::ErrorExit::ON);
   // ngl::ShaderLib::attachShaderToProgram("GbuffProgram","shaders/DSVertext.glsl");
@@ -93,6 +121,8 @@ void NGLScene::initializeGL()
 
   int w = this->size().width();
   int h = this->size().height();
+
+  // G BUFFER CREATION
 
   glGenFramebuffers(1,&gBuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -121,8 +151,11 @@ void NGLScene::initializeGL()
   unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2};
   glDrawBuffers(3, attachments);
 
+
+  mesh1.Transform(0.0,1.0,-5.0);
+
   mesh1.CreateVAO();
-  // mesh1.Transform(1.0f,1.0f,1.0f);
+
 
   glViewport(0, 0, width(), height());
 
@@ -160,23 +193,56 @@ void NGLScene::paintGL()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0,m_win.width,m_win.height);
 
-
+  // Get current frame
   float currentFrame = m_timer.elapsed() * 0.001f;
   m_deltatime = currentFrame-m_lastframe;
   m_lastframe = currentFrame;
 
-  ngl::Mat4 rotX = ngl::Mat4::rotateX(m_win.spinXFace);
-  ngl::Mat4 rotY = ngl::Mat4::rotateY(m_win.spinYFace);
+  // I actaully have no ideda
+  // ngl::Mat4 rotX = ngl::Mat4::rotateX(m_win.spinXFace);
+  // ngl::Mat4 rotY = ngl::Mat4::rotateY(m_win.spinYFace);
+  //
+  //
+  // m_mouseGlobalTX = rotY * rotX;
+  // m_mouseGlobalTX.m_m[3][0] = m_modelPos.m_x;
+  // m_mouseGlobalTX.m_m[3][1] = m_modelPos.m_y;
+  // m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
 
+  // G BUFFER PASS
 
-  m_mouseGlobalTX = rotY * rotX;
-  m_mouseGlobalTX.m_m[3][0] = m_modelPos.m_x;
-  m_mouseGlobalTX.m_m[3][1] = m_modelPos.m_y;
-  m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
-
-
-  loadMatricesToShader(useProgram);
+  glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  loadMatricesToShader("GbufferShader");
   mesh1.Draw();
+  glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+  // LIGHT PASS
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  loadMatricesToShader("LightingShader");
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D,gPos);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D,gNorm);
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D,gColorSpec);
+
+  GLuint programID = ngl::ShaderLib::getProgramID("LightingShader");
+
+  glUniform3fv(glGetUniformLocation(programID,"lightPos"),1,lightPos.openGL());
+  glUniform3fv(glGetUniformLocation(programID,"lightCol"),1,lightCol.openGL());
+  glUniform3fv(glGetUniformLocation(programID,"viewPos"),1,m_cam.camPos.openGL());
+
+  renderQuad();
+
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+  glBlitFramebuffer(0, 0, m_win.width, m_win.height, 0, 0, m_win.width, m_win.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -223,12 +289,6 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
     break;
   case Qt::Key_Right :
     mesh1.Transform(0.5,0.0,0.0);
-    break;
-  case Qt::Key_N :
-    useProgram = "GBufferShader";
-    break;
-  case Qt::Key_M :
-    useProgram = "ParticleShader";
     break;
 
   break;
