@@ -3,6 +3,7 @@
 
 #include "NGLScene.h"
 #include "Mesh.h"
+#include <random>
 #include <ngl/NGLInit.h>
 #include <ngl/ShaderLib.h>
 #include <ngl/VAOPrimitives.h>
@@ -85,12 +86,8 @@ void NGLScene::resizeGL(int _w , int _h)
   m_win.height = static_cast<int>( _h * devicePixelRatio() );
 }
 
-unsigned int gBuffer;
+
 unsigned int gPos, gNorm, gColorSpec;
-unsigned int gBuffProgram;
-unsigned int lightingProgram;
-
-
 
 void NGLScene::initializeGL()
 {
@@ -107,6 +104,7 @@ void NGLScene::initializeGL()
 
   ngl::ShaderLib::loadShader("GbufferShader","shaders/DSVertext.glsl","shaders/DSFragment.glsl");
   ngl::ShaderLib::loadShader("LightingShader","shaders/LightVertex.glsl","shaders/LightFragment.glsl");
+  ngl::ShaderLib::loadShader("BoxLightShader", "shaders/BoxlightVertex.glsl","shaders/BoxlightFragment.glsl");
 
   // ngl::ShaderLib::createShaderProgram("GbuffProgram",ngl::ErrorExit::ON);
   // ngl::ShaderLib::attachShaderToProgram("GbuffProgram","shaders/DSVertext.glsl");
@@ -124,35 +122,56 @@ void NGLScene::initializeGL()
 
   // G BUFFER CREATION
 
+
+
   glGenFramebuffers(1,&gBuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
 
   glGenTextures(1, &gPos);
   glBindTexture(GL_TEXTURE_2D, gPos);
-  glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA16F, m_win.width,m_win.height,0,GL_RGBA,GL_FLOAT,NULL);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,gPos,0);
-
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,  w, h, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPos, 0);
+  // normal color buffer
   glGenTextures(1, &gNorm);
   glBindTexture(GL_TEXTURE_2D, gNorm);
-  glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA16F, m_win.width,m_win.height,0,GL_RGBA,GL_FLOAT,NULL);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,gNorm,0);
-
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,  w, h, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNorm, 0);
+  // color + specular color buffer
   glGenTextures(1, &gColorSpec);
   glBindTexture(GL_TEXTURE_2D, gColorSpec);
-  glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA16F, m_win.width,m_win.height,0,GL_RGBA,GL_FLOAT,NULL);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D,gColorSpec,0);
-
-  unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2};
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gColorSpec, 0);
+  // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering
+  unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
   glDrawBuffers(3, attachments);
 
+  unsigned int rboDepth;
+  glGenRenderbuffers(1, &rboDepth);
+  glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 
-  mesh1.Transform(0.0,1.0,-5.0);
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    std::cerr << "FrameBufferError" << std::endl;
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  for (unsigned int i = 0; i < numLights; i++)
+  {
+    std::random_device rd;
+    std::uniform_real_distribution<double> posDist(0.0,1.0);
+    std::uniform_real_distribution<double> ColDist(0.1,1.0);
+    lightPos.push_back(ngl::Vec3(posDist(rd),posDist(rd),posDist(rd)));
+    lightCol.push_back(ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd)));
+  }
+
+
+  mesh1.Transform(0.0,1.0,0.0);
 
   mesh1.CreateVAO();
 
@@ -178,6 +197,7 @@ void NGLScene::loadMatricesToShader(std::string ProgramName)
 
   ngl::ShaderLib::use(ProgramName);
   GLuint programID = ngl::ShaderLib::getProgramID(ProgramName);
+  glUseProgram(programID);
 
   glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,M.openGL());
   glUniformMatrix4fv(glGetUniformLocation(programID,"View"),1,GL_FALSE,V.openGL());
@@ -199,14 +219,14 @@ void NGLScene::paintGL()
   m_lastframe = currentFrame;
 
   // I actaully have no ideda
-  // ngl::Mat4 rotX = ngl::Mat4::rotateX(m_win.spinXFace);
-  // ngl::Mat4 rotY = ngl::Mat4::rotateY(m_win.spinYFace);
-  //
-  //
-  // m_mouseGlobalTX = rotY * rotX;
-  // m_mouseGlobalTX.m_m[3][0] = m_modelPos.m_x;
-  // m_mouseGlobalTX.m_m[3][1] = m_modelPos.m_y;
-  // m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
+  ngl::Mat4 rotX = ngl::Mat4::rotateX(m_win.spinXFace);
+  ngl::Mat4 rotY = ngl::Mat4::rotateY(m_win.spinYFace);
+
+
+  m_mouseGlobalTX = rotY * rotX;
+  m_mouseGlobalTX.m_m[3][0] = m_modelPos.m_x;
+  m_mouseGlobalTX.m_m[3][1] = m_modelPos.m_y;
+  m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
 
   // G BUFFER PASS
 
@@ -216,7 +236,7 @@ void NGLScene::paintGL()
   mesh1.Draw();
   glBindFramebuffer(GL_FRAMEBUFFER,0);
 
-  // LIGHT PASS
+  // // LIGHT PASS
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   loadMatricesToShader("LightingShader");
@@ -229,22 +249,43 @@ void NGLScene::paintGL()
 
   GLuint programID = ngl::ShaderLib::getProgramID("LightingShader");
 
-  glUniform3fv(glGetUniformLocation(programID,"lightPos"),1,lightPos.openGL());
-  glUniform3fv(glGetUniformLocation(programID,"lightCol"),1,lightCol.openGL());
+  glUniform1i(glGetUniformLocation(programID, "gPos"), 0);
+
+  glUniform1i(glGetUniformLocation(programID, "gNorm"), 1);
+
+  glUniform1i(glGetUniformLocation(programID, "gColorSpec"), 2);
+
+  for(unsigned int i = 0; i < lightPos.size(); i++)
+  {
+    glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Pos").c_str()),1,lightPos[i].openGL());
+    glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Col").c_str()),1,lightCol[i].openGL());
+  }
+
   glUniform3fv(glGetUniformLocation(programID,"viewPos"),1,m_cam.camPos.openGL());
 
   renderQuad();
 
   glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 1);
 
-  glBlitFramebuffer(0, 0, m_win.width, m_win.height, 0, 0, m_win.width, m_win.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+  glBlitFramebuffer(-1, -1, m_win.width , m_win.height, 0, 0, m_win.width, m_win.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+  // loadMatricesToShader("BoxLightShader");
+  // for (unsigned int i = 0; i < lightPos.size(); i++)
+  // {
+  //   // ngl::Mat4 model = ngl::Mat4();
+  //   // model = ngl::trans
+  //
+  //   // do later either figure out the transformation matrix or get a way to get ngl::translate to work here
+  //
+  //
+  //   glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,model.openGL());
+  // }
 
 
 
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 
 
 

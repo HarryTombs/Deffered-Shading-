@@ -110,9 +110,12 @@ private:
     float m_lastframe = 0.0f;
     QSet<Qt::Key> m_keysPressed;
 
-    ngl::Vec3 lightPos = ngl::Vec3(-1,4,4);
-    ngl::Vec3 lightCol = ngl::Vec3(1,1,1);
-    int numLights = 20;
+    std::vector<ngl::Vec3> lightPos;
+    std::vector<ngl::Vec3> lightCol;
+    int numLights = 32;
+
+    unsigned int gBuffer;
+
 
     void renderQuad();
 
