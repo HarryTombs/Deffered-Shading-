@@ -21,7 +21,7 @@ uniform vec3 viewPos;
 void main()
 {
     vec3 Fragpos = texture(gPos, TexCoord).rgb;
-    vec3 Normal = normalize(texture(gNorm, TexCoord).rgb);
+    vec3 Normal = texture(gNorm, TexCoord).rgb;
     vec3 albedo = texture(gColorSpec, TexCoord).rgb;
 
     vec3 lighting = vec3(0.1);
@@ -37,7 +37,7 @@ void main()
         float spec = pow(max(dot(Normal, halfwaydir), 0.0), 64.0);
         vec3 specular = spec * lights[i].Col;
 
-        lighting += diffuse + specular;
+        lighting += diffuse;
     }
     FragColor = vec4(lighting, 1.0);
 }

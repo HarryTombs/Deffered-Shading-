@@ -17,6 +17,8 @@
 void Mesh::Draw()
 {
   m_MESH->draw();
+  m_MESH->setTexture(m_TEXFilename);
+  texId = m_MESH->getTextureID();
 }
 
 void Mesh::CreateVAO()
@@ -143,7 +145,7 @@ void NGLScene::initializeGL()
   // color + specular color buffer
   glGenTextures(1, &gColorSpec);
   glBindTexture(GL_TEXTURE_2D, gColorSpec);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gColorSpec, 0);
@@ -171,7 +173,7 @@ void NGLScene::initializeGL()
   }
 
 
-  mesh1.Transform(0.0,1.0,0.0);
+  mesh1.Transform(0.0,0.0,0.0);
 
   mesh1.CreateVAO();
 
@@ -233,6 +235,8 @@ void NGLScene::paintGL()
   glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   loadMatricesToShader("GbufferShader");
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D,mesh1.texId);
   mesh1.Draw();
   glBindFramebuffer(GL_FRAMEBUFFER,0);
 
@@ -270,6 +274,9 @@ void NGLScene::paintGL()
 
   glBlitFramebuffer(-1, -1, m_win.width , m_win.height, 0, 0, m_win.width, m_win.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+
 
   // loadMatricesToShader("BoxLightShader");
   // for (unsigned int i = 0; i < lightPos.size(); i++)

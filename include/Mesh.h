@@ -25,6 +25,7 @@ public:
     void Draw();
     void Transform(float _xDif, float _yDif, float _zDif);
     ngl::Transformation m_TRANS;
+    unsigned int texId;
 
 };
 
