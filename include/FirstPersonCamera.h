@@ -22,7 +22,7 @@ public:
     ngl::Real m_far = 100.0f;
     ngl::Real m_yaw = -90.0f;
     ngl::Real m_pitch = 0.0f;
-    ngl::Real m_speed = 1.5f;
+    ngl::Real m_speed = 0.75f;
     ngl::Real m_sensitivity = 0.1f;
 
     int width;

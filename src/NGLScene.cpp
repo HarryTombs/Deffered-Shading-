@@ -34,33 +34,6 @@ void Mesh::Transform(float _xDif, float _yDif, float _zDif)
 
 Mesh mesh1;
 
-unsigned int quadVAO = 0;
-unsigned int quadVBO;
-
-void NGLScene::renderQuad()
-{
-  if (quadVAO == 0 )
-  {
-    float quadVerticies[] = {
-      -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-      -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-      1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-      1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-    };
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER,sizeof(quadVerticies),&quadVerticies,GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3,GL_FLOAT, GL_FALSE, 5 * sizeof(float),(void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2,GL_FLOAT, GL_FALSE, 5 * sizeof(float),(void*)(3*sizeof(float)));
-  }
-  glBindVertexArray(quadVAO);
-  glDrawArrays(GL_TRIANGLE_STRIP,0,4);
-  glBindVertexArray(0);
-}
 
 
 NGLScene::NGLScene(const std::string &_objName, const std::string &_texName)
@@ -113,7 +86,7 @@ void NGLScene::initializeGL()
   // ngl::ShaderLib::attachShaderToProgram("GbuffProgram","/shaders/DSFragment.glsl");
   // ngl::ShaderLib::createShaderProgram("LightProgram");
 
-  ngl::Vec3 from(0, 1, 5);
+  ngl::Vec3 from(0, 0, 5);
   ngl::Vec3 to(0, 0, 0);
   ngl::Vec3 up(0, 1, 0);
   m_cam.set(from,to,up);
@@ -131,21 +104,21 @@ void NGLScene::initializeGL()
 
   glGenTextures(1, &gPos);
   glBindTexture(GL_TEXTURE_2D, gPos);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,  w, h, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,  m_win.width , m_win.height, 0, GL_RGBA, GL_FLOAT, NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPos, 0);
   // normal color buffer
   glGenTextures(1, &gNorm);
   glBindTexture(GL_TEXTURE_2D, gNorm);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,  w, h, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,  m_win.width , m_win.height, 0, GL_RGBA, GL_FLOAT, NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNorm, 0);
   // color + specular color buffer
   glGenTextures(1, &gColorSpec);
   glBindTexture(GL_TEXTURE_2D, gColorSpec);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_win.width , m_win.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gColorSpec, 0);
@@ -156,7 +129,7 @@ void NGLScene::initializeGL()
   unsigned int rboDepth;
   glGenRenderbuffers(1, &rboDepth);
   glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_win.width , m_win.height);
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 
   if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -166,7 +139,7 @@ void NGLScene::initializeGL()
   for (unsigned int i = 0; i < numLights; i++)
   {
     std::random_device rd;
-    std::uniform_real_distribution<double> posDist(-1.0,1.0);
+    std::uniform_real_distribution<double> posDist(-lightDiff,lightDiff);
     std::uniform_real_distribution<double> ColDist(0.1,1.0);
     lightPos.push_back(ngl::Vec3(posDist(rd),posDist(rd),posDist(rd)));
     lightCol.push_back(ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd)));
@@ -183,28 +156,33 @@ void NGLScene::initializeGL()
 }
 
 
-void NGLScene::loadMatricesToShader(std::string ProgramName)
+void NGLScene::loadMatricesToShader(std::string ProgramName, bool CalcMatrix)
 {
+  ngl::ShaderLib::use(ProgramName);
+  GLuint programID = ngl::ShaderLib::getProgramID(ProgramName);
+  glUseProgram(programID);
+
   ngl::Mat3 normalMatrix;
   ngl::Mat4 M;
   ngl::Mat4 V;
   ngl::Mat4 P;
 
-  M = mesh1.m_TRANS.getMatrix();
   V = m_cam.getView();
   P = m_cam.getProjection();
 
-  normalMatrix = ngl::Mat3(M*V);
-  normalMatrix.inverse().transpose();
-
-  ngl::ShaderLib::use(ProgramName);
-  GLuint programID = ngl::ShaderLib::getProgramID(ProgramName);
-  glUseProgram(programID);
-
-  glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,M.openGL());
   glUniformMatrix4fv(glGetUniformLocation(programID,"View"),1,GL_FALSE,V.openGL());
   glUniformMatrix4fv(glGetUniformLocation(programID,"Projection"),1,GL_FALSE,P.openGL());
-  glUniformMatrix3fv(glGetUniformLocation(programID,"normalMatrix"),1,GL_FALSE,normalMatrix.openGL());
+
+  if (CalcMatrix == true)
+  {
+    M = mesh1.m_TRANS.getMatrix();
+    glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,M.openGL());
+
+    normalMatrix = ngl::Mat3(M*V);
+    normalMatrix.inverse().transpose();
+    glUniformMatrix3fv(glGetUniformLocation(programID,"normalMatrix"),1,GL_FALSE,normalMatrix.openGL());
+  }
+
 }
 
 
@@ -212,6 +190,7 @@ void NGLScene::loadMatricesToShader(std::string ProgramName)
 void NGLScene::paintGL()
 {
   // clear the screen and depth buffer
+  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0,m_win.width,m_win.height);
 
@@ -221,31 +200,31 @@ void NGLScene::paintGL()
   m_lastframe = currentFrame;
 
   // I actaully have no ideda
-  ngl::Mat4 rotX = ngl::Mat4::rotateX(m_win.spinXFace);
-  ngl::Mat4 rotY = ngl::Mat4::rotateY(m_win.spinYFace);
+  // ngl::Mat4 rotX = ngl::Mat4::rotateX(m_win.spinXFace);
+  // ngl::Mat4 rotY = ngl::Mat4::rotateY(m_win.spinYFace);
+  //
+  //
+  // m_mouseGlobalTX = rotY * rotX;
+  // m_mouseGlobalTX.m_m[3][0] = m_modelPos.m_x;
+  // m_mouseGlobalTX.m_m[3][1] = m_modelPos.m_y;
+  // m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
 
-
-  m_mouseGlobalTX = rotY * rotX;
-  m_mouseGlobalTX.m_m[3][0] = m_modelPos.m_x;
-  m_mouseGlobalTX.m_m[3][1] = m_modelPos.m_y;
-  m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
-
-  std::cout << "Before GBuffer" << std::endl;
-
-  GLint currentTextureID;
-  glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
-  std::cout << "Current Texture ID: " << currentTextureID << std::endl;
-
-  GLint activeTexture;
-  glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
-  std::cout << "Active Texture Unit: " << activeTexture << std::endl;
-
+  // std::cout << "Before GBuffer" << std::endl;
+  //
+  // GLint currentTextureID;
+  // glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
+  // std::cout << "Current Texture ID: " << currentTextureID << std::endl;
+  //
+  // GLint activeTexture;
+  // glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
+  // std::cout << "Active Texture Unit: " << activeTexture << std::endl;
+  //
 
   // G BUFFER PASS
 
   glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  loadMatricesToShader("GbufferShader");
+  loadMatricesToShader("GbufferShader", true);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D,mesh1.texId);
   mesh1.Draw();
@@ -254,7 +233,7 @@ void NGLScene::paintGL()
   // // LIGHT PASS
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  loadMatricesToShader("LightingShader");
+  loadMatricesToShader("LightingShader", true);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D,gPos);
   glActiveTexture(GL_TEXTURE1);
@@ -270,7 +249,10 @@ void NGLScene::paintGL()
 
   glUniform1i(glGetUniformLocation(programID, "gColorSpec"), 2);
 
-  for(unsigned int i = 0; i < lightPos.size(); i++)
+  glUniform1i(glGetUniformLocation(programID, "NR_Lights"), numLights);
+
+
+  for(unsigned int i = 0; i < numLights; i++)
   {
     glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Pos").c_str()),1,lightPos[i].openGL());
     glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Col").c_str()),1,lightCol[i].openGL());
@@ -286,41 +268,174 @@ void NGLScene::paintGL()
   }
 
   glUniform3fv(glGetUniformLocation(programID,"viewPos"),1,m_cam.camPos.openGL());
+  glDisable(GL_DEPTH_TEST);
 
   renderQuad();
 
+  glEnable(GL_DEPTH_TEST);
+
   glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 1);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
   glBlitFramebuffer(-1, -1, m_win.width , m_win.height, 0, 0, m_win.width, m_win.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
 
 
-  glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
-  std::cout << "Current Texture ID: " << currentTextureID << std::endl;
-
-  std::cout << "End" << std::endl;
-
-  // loadMatricesToShader("BoxLightShader");
-  // for (unsigned int i = 0; i < lightPos.size(); i++)
-  // {
-  //   // ngl::Mat4 model = ngl::Mat4();
-  //   // model = ngl::trans
+  // glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
+  // std::cout << "Current Texture ID: " << currentTextureID << std::endl;
   //
-  //   // do later either figure out the transformation matrix or get a way to get ngl::translate to work here
-  //
-  //
-  //   glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,model.openGL());
-  // }
+  // std::cout << "End" << std::endl;
 
+  ngl::ShaderLib::use("BoxLightShader");
+  programID = ngl::ShaderLib::getProgramID("BoxLightShader");
+  glUseProgram(programID);
+  glUseProgram(programID);
 
+  ngl::Mat4 V;
+  ngl::Mat4 P;
 
+  V = m_cam.getView();
+  P = m_cam.getProjection();
 
-
-
+  glUniformMatrix4fv(glGetUniformLocation(programID,"View"),1,GL_FALSE,V.openGL());
+  glUniformMatrix4fv(glGetUniformLocation(programID,"Projection"),1,GL_FALSE,P.openGL());
+  for (unsigned int i = 0; i < numLights; i++)
+  {
+    lightTrans.setPosition(lightPos[i]);
+    lightTrans.setScale(0.05,0.05,0.05);
+    ngl::Mat4 model = lightTrans.getMatrix();
+    glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,model.openGL());
+    glUniform3fv(glGetUniformLocation(programID,"lightCol"),1,lightCol[i].openGL());
+    renderCube();
+  }
 
 }
+
+void NGLScene::clearLights()
+{
+  lightPos.clear();
+  lightCol.clear();
+}
+
+
+void NGLScene::changeLights()
+{
+  for (unsigned int i = 0; i < numLights; i++)
+  {
+    std::random_device rd;
+    std::uniform_real_distribution<double> posDist(-lightDiff,lightDiff);
+    std::uniform_real_distribution<double> ColDist(0.1,1.0);
+    lightPos.push_back(ngl::Vec3(posDist(rd),posDist(rd),posDist(rd)));
+    lightCol.push_back(ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd)));
+  }
+}
+
+
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+
+void NGLScene::renderQuad()
+{
+  if (quadVAO == 0 )
+  {
+    float quadVerticies[] = {
+      -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+      -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+      1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+      1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    };
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(quadVerticies),&quadVerticies,GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3,GL_FLOAT, GL_FALSE, 5 * sizeof(float),(void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2,GL_FLOAT, GL_FALSE, 5 * sizeof(float),(void*)(3*sizeof(float)));
+  }
+  glBindVertexArray(quadVAO);
+  glDrawArrays(GL_TRIANGLE_STRIP,0,4);
+  glBindVertexArray(0);
+}
+
+unsigned int cubeVAO = 0;
+unsigned int cubeVBO = 0;
+
+void NGLScene::renderCube()
+{
+  if (cubeVAO == 0)
+  {
+    float vertices[] = {
+            // back face
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+             1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+            // front face
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+             1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+            -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+            // left face
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            // right face
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+             1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+             1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
+            // bottom face
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+             1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+            // top face
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+             1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+             1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right
+             1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+            -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left
+        };
+    glGenVertexArrays(1, &cubeVAO);
+    glGenBuffers(1, &cubeVBO);
+    // fill buffer
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // link vertex attributes
+    glBindVertexArray(cubeVAO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+  }
+  // render Cube
+  glBindVertexArray(cubeVAO);
+  glDrawArrays(GL_TRIANGLES, 0, 36);
+  glBindVertexArray(0);
+}
+
+
+
 //----------------------------------------------------------------------------------------------------------------------
 
 void NGLScene::keyPressEvent(QKeyEvent *_event)
@@ -362,6 +477,36 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
   case Qt::Key_Right :
     mesh1.Transform(0.5,0.0,0.0);
     break;
+  case Qt::Key_L :
+    clearLights();
+    changeLights();
+    break;
+  case Qt::Key_O :
+    lightDiff += 0.1;
+    for (unsigned int i = 0; i < numLights; i++)
+    {
+      lightPos[i].operator*=(1.1);
+
+    }
+    break;
+  case Qt::Key_I :
+    lightDiff -= 0.1;
+    for (unsigned int i = 0; i < numLights; i++)
+    {
+      lightPos[i].operator*=(0.9);
+    }
+    break;
+  case Qt::Key_M :
+    numLights += 2;
+    changeLights();
+    break;
+  case Qt::Key_N :
+    if (numLights > 2)
+    {
+      numLights -= 2;
+      changeLights();
+    }
+
 
   break;
 

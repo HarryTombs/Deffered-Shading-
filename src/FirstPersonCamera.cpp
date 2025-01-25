@@ -74,8 +74,14 @@ void FirstPersonCamera::processMouseMovement(float _newX, float _newY, GLboolean
     m_yaw -= _newX; // applying to the pitch and yaw
     m_pitch += _newY; // I have them as opposites because i get confused otherwise
 
+    if (constrainPitch)
+    {
+        if (m_pitch > 89.0)
+            m_pitch = 89.0;
+        if (m_pitch < -89.0)
+            m_pitch = -89.0;
+    }
+
     setVectors(); // send them to the reset!
 }
 
-
-// It's hard to make this orignal so im leaving lots of comments to show I understand it

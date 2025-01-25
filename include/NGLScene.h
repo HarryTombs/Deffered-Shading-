@@ -44,7 +44,7 @@ class NGLScene : public QOpenGLWindow
     /// use this to setup any default GL stuff
     //----------------------------------------------------------------------------------------------------------------------
     void initializeGL() override;
-    void loadMatricesToShader(std::string ProgramName);
+    void loadMatricesToShader(std::string ProgramName, bool CalcMatrix);
 
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief this is called everytime we want to draw the scene
@@ -58,10 +58,6 @@ class NGLScene : public QOpenGLWindow
     /// IMAGE INPUT
     //----------------------------------------------------------------------------------------------------------------------
 
-
-
-    GLuint CreateShader(const std::string& filePath, GLenum shaderType);
-    std::string readShaderFromFile(const std::string& filePath);
 
 private:
 
@@ -112,7 +108,15 @@ private:
 
     std::vector<ngl::Vec3> lightPos;
     std::vector<ngl::Vec3> lightCol;
+    ngl::Transformation lightTrans;
+    float lightDiff = 1;
     int numLights = 32;
+
+    void changeLights();
+    void clearLights();
+
+    int numMesh = 10;
+    std::vector<Mesh> meshArray;
 
     unsigned int gBuffer;
 
@@ -120,6 +124,8 @@ private:
 
 
     void renderQuad();
+
+    void renderCube();
 
 
 
