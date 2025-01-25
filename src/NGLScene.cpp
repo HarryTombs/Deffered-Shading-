@@ -166,7 +166,7 @@ void NGLScene::initializeGL()
   for (unsigned int i = 0; i < numLights; i++)
   {
     std::random_device rd;
-    std::uniform_real_distribution<double> posDist(0.0,1.0);
+    std::uniform_real_distribution<double> posDist(-1.0,1.0);
     std::uniform_real_distribution<double> ColDist(0.1,1.0);
     lightPos.push_back(ngl::Vec3(posDist(rd),posDist(rd),posDist(rd)));
     lightCol.push_back(ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd)));
@@ -230,6 +230,17 @@ void NGLScene::paintGL()
   m_mouseGlobalTX.m_m[3][1] = m_modelPos.m_y;
   m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
 
+  std::cout << "Before GBuffer" << std::endl;
+
+  GLint currentTextureID;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
+  std::cout << "Current Texture ID: " << currentTextureID << std::endl;
+
+  GLint activeTexture;
+  glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
+  std::cout << "Active Texture Unit: " << activeTexture << std::endl;
+
+
   // G BUFFER PASS
 
   glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -263,6 +274,15 @@ void NGLScene::paintGL()
   {
     glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Pos").c_str()),1,lightPos[i].openGL());
     glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Col").c_str()),1,lightCol[i].openGL());
+    const float constant = 1.0f;
+    const float linear = 0.7f;
+    GLfloat quadratic = 1.8f;
+    glUniform1f(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Linear").c_str()),linear);
+    glUniform1f(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Quadratic").c_str()),quadratic);
+    const float maxBrightness = std::fmaxf(std::fmaxf(lightCol[i].m_x, lightCol[i].m_y), lightCol[i].m_z);
+    float radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * maxBrightness))) / (2.0f * quadratic);
+    glUniform1f(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Radius").c_str()),radius);
+
   }
 
   glUniform3fv(glGetUniformLocation(programID,"viewPos"),1,m_cam.camPos.openGL());
@@ -277,6 +297,10 @@ void NGLScene::paintGL()
   glBindTexture(GL_TEXTURE_2D, 0);
 
 
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
+  std::cout << "Current Texture ID: " << currentTextureID << std::endl;
+
+  std::cout << "End" << std::endl;
 
   // loadMatricesToShader("BoxLightShader");
   // for (unsigned int i = 0; i < lightPos.size(); i++)
