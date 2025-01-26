@@ -30,8 +30,6 @@ void NGLScene::mouseMoveEvent(QMouseEvent *_event)
     int diffY = static_cast<int>(position.y() - m_win.origYPos);
     m_win.origXPos = position.x();
     m_win.origYPos = position.y();
-    m_modelPos.m_x += INCREMENT * diffX;
-    m_modelPos.m_y -= INCREMENT * diffY;
     update();
   }
 }
@@ -77,20 +75,4 @@ void NGLScene::mouseReleaseEvent(QMouseEvent *_event)
   {
     m_win.translate = false;
   }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-void NGLScene::wheelEvent(QWheelEvent *_event)
-{
-
-  // check the diff of the wheel position (0 means no change)
-  if (_event->angleDelta().y() > 0)
-  {
-    m_modelPos.m_z += ZOOM;
-  }
-  else if (_event->angleDelta().y() < 0)
-  {
-    m_modelPos.m_z -= ZOOM;
-  }
-  update();
 }

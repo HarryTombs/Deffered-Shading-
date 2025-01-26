@@ -24,7 +24,6 @@ public:
     ngl::Real m_pitch = 0.0f;
     ngl::Real m_speed = 0.75f;
     ngl::Real m_sensitivity = 0.1f;
-
     int width;
     int height;
 

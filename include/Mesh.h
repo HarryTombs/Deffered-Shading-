@@ -15,7 +15,6 @@ class Mesh
     std::string m_OBJFilename;
     std::string m_TEXFilename;
     ngl::Vec3 m_POS;
-
     std::unique_ptr<ngl::Obj> m_MESH;
 public:
     Mesh() : m_OBJFilename("models/test2.obj"), m_TEXFilename("textures/planks.png"){}
@@ -26,7 +25,6 @@ public:
     void Transform(float _xDif, float _yDif, float _zDif);
     ngl::Transformation m_TRANS;
     unsigned int texId;
-
 };
 
 

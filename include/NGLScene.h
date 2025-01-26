@@ -44,8 +44,6 @@ class NGLScene : public QOpenGLWindow
     /// use this to setup any default GL stuff
     //----------------------------------------------------------------------------------------------------------------------
     void initializeGL() override;
-    void loadMatricesToShader(std::string ProgramName, bool CalcMatrix);
-
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief this is called everytime we want to draw the scene
     //----------------------------------------------------------------------------------------------------------------------
@@ -57,6 +55,7 @@ class NGLScene : public QOpenGLWindow
     //----------------------------------------------------------------------------------------------------------------------
     /// IMAGE INPUT
     //----------------------------------------------------------------------------------------------------------------------
+
 
 
 private:
@@ -89,18 +88,15 @@ private:
     /// inherited from QObject and overridden here.
     /// @param _event the Qt Event structure
     //----------------------------------------------------------------------------------------------------------------------
-    void wheelEvent( QWheelEvent *_event) override;
-    /// @brief windows parameters for mouse control etc.
     WinParams m_win;
-    /// position for our model
-    ngl::Vec3 m_modelPos;
-    ngl::Mat4 m_view;
-    ngl::Mat4 m_projection;
-    ngl::Mat4 m_mouseGlobalTX;
-    std::unique_ptr<ngl::Obj> m_mesh;
+
     std::string m_objFileName;
     std::string m_texFileName;
+
+    ngl::Mat4 m_view;
+    ngl::Mat4 m_projection;
     FirstPersonCamera m_cam;
+
     QElapsedTimer m_timer;
     float m_deltatime = 0.0f;
     float m_lastframe = 0.0f;
@@ -111,22 +107,20 @@ private:
     ngl::Transformation lightTrans;
     float lightDiff = 1;
     int numLights = 32;
-
     void changeLights();
     void clearLights();
 
     int numMesh = 10;
     std::vector<Mesh> meshArray;
+    Mesh mesh1;
 
     unsigned int gBuffer;
-
-
-
+    unsigned int uBuffer;
+    unsigned int gPos, gNorm, gColorSpec;
 
     void renderQuad();
-
     void renderCube();
-
+    void loadMatricesToShader(std::string ProgramName, bool CalcMatrix);
 
 
 };

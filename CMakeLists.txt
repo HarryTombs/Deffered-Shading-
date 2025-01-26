@@ -40,9 +40,10 @@ add_executable(${TargetName})
 
 # Add NGL include path
 include_directories(include $ENV{HOME}/NGL/include)
-target_sources(${TargetName} PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp  
-			${PROJECT_SOURCE_DIR}/src/NGLScene.cpp  
-			${PROJECT_SOURCE_DIR}/src/NGLSceneMouseControls.cpp  
+target_sources(${TargetName} PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
+			${PROJECT_SOURCE_DIR}/src/NGLScene.cpp
+			${PROJECT_SOURCE_DIR}/src/main.cpp
+			${PROJECT_SOURCE_DIR}/src/NGLSceneMouseControls.cpp
 			${PROJECT_SOURCE_DIR}/src/FirstPersonCamera.cpp
 			${PROJECT_SOURCE_DIR}/include/NGLScene.h
             ${PROJECT_SOURCE_DIR}/include/Mesh.h
@@ -65,3 +66,26 @@ add_custom_target(${TargetName}CopyShaders ALL
         ${CMAKE_CURRENT_SOURCE_DIR}/models
         $<TARGET_FILE_DIR:${TargetName}>/models
 )
+
+
+find_package(GTest CONFIG REQUIRED)
+include(GoogleTest)
+enable_testing()
+add_executable(DSTests
+        tests/DSTests.cpp)
+target_include_directories(DSTests PRIVATE include)
+
+target_sources(DSTests PRIVATE ${CMAKE_SOURCE_DIR}/tests/DSTests.cpp
+        ${CMAKE_SOURCE_DIR}/src/NGLScene.cpp
+        ${CMAKE_SOURCE_DIR}/src/FirstPersonCamera.cpp
+        ${CMAKE_SOURCE_DIR}/src/NGLSceneMouseControls.cpp
+        ${CMAKE_SOURCE_DIR}/include/NGLScene.h
+        ${CMAKE_SOURCE_DIR}/include/Mesh.h
+        ${CMAKE_SOURCE_DIR}/include/FirstPersonCamera.h
+
+)
+target_link_libraries(DSTests PRIVATE GTest::gtest GTest::gtest_main )
+target_link_libraries(DSTests PRIVATE Qt::Widgets Qt::OpenGL NGL)
+
+
+gtest_discover_tests(DSTests)

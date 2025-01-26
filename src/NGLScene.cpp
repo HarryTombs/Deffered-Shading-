@@ -19,30 +19,28 @@ void Mesh::Draw()
   m_MESH->draw();
   m_MESH->setTexture(m_TEXFilename);
   texId = m_MESH->getTextureID();
+  // Drawing function also sets the texture and gives ID for assignment later
 }
 
 void Mesh::CreateVAO()
 {
   m_MESH.reset(new ngl::Obj(m_OBJFilename,m_TEXFilename));
   m_MESH->createVAO();
+  // Creates a VAO for that specific mesh, makes multiple meshes possible
 }
 
 void Mesh::Transform(float _xDif, float _yDif, float _zDif)
 {
   m_TRANS.addPosition(_xDif,_yDif,_zDif);
+  // Change position for testing lighting locations
 }
-
-Mesh mesh1;
-
 
 
 NGLScene::NGLScene(const std::string &_objName, const std::string &_texName)
 {
-  // re-size the widget to that of the parent (in this case the GLFrame passed in on construction)
   setTitle("Render");
   m_objFileName = _objName;
   m_texFileName = _texName;
-  // m_MeshArray.resize(m_meshNum);
   m_timer.start(); // timer to know what time it is
 }
 
@@ -62,30 +60,21 @@ void NGLScene::resizeGL(int _w , int _h)
 }
 
 
-unsigned int gPos, gNorm, gColorSpec;
-
 void NGLScene::initializeGL()
 {
-  // we must call that first before any other GL commands to load and link the
-  // gl commands from the lib, if that is not done program will crash
+  // initialise and clear
   ngl::NGLInit::initialize();
-  glClearColor(0.7f, 0.7f, 0.7f, 1.0f);			   // Grey Background
-  // enable depth testing for drawing
+  glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
   glEnable(GL_DEPTH_TEST);
-  // enable multisampling for smoother drawing
   glEnable(GL_MULTISAMPLE);
 
 
-
+  // load shaders with fragment and vertex
   ngl::ShaderLib::loadShader("GbufferShader","shaders/DSVertext.glsl","shaders/DSFragment.glsl");
   ngl::ShaderLib::loadShader("LightingShader","shaders/LightVertex.glsl","shaders/LightFragment.glsl");
   ngl::ShaderLib::loadShader("BoxLightShader", "shaders/BoxlightVertex.glsl","shaders/BoxlightFragment.glsl");
 
-  // ngl::ShaderLib::createShaderProgram("GbuffProgram",ngl::ErrorExit::ON);
-  // ngl::ShaderLib::attachShaderToProgram("GbuffProgram","shaders/DSVertext.glsl");
-  // ngl::ShaderLib::attachShaderToProgram("GbuffProgram","/shaders/DSFragment.glsl");
-  // ngl::ShaderLib::createShaderProgram("LightProgram");
-
+  // Camera inital setup
   ngl::Vec3 from(0, 0, 5);
   ngl::Vec3 to(0, 0, 0);
   ngl::Vec3 up(0, 1, 0);
@@ -95,19 +84,30 @@ void NGLScene::initializeGL()
   int w = this->size().width();
   int h = this->size().height();
 
+
+  GLint currentTextureID;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
+  std::cout << "Current Texture ID: " << currentTextureID << std::endl;
+
   // G BUFFER CREATION
 
-
+  // Following section modified from :-
+  // Learnopengl.com. (2020). LearnOpenGL - Deferred Shading. [online]
+  // [Accessed 2024] Available at: https://learnopengl.com/code_viewer_gh.php?code=src/5.advanced_lighting/8.1.deferred_shading/deferred_shading.cpp
 
   glGenFramebuffers(1,&gBuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-
+  // position color buffer
   glGenTextures(1, &gPos);
   glBindTexture(GL_TEXTURE_2D, gPos);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,  m_win.width , m_win.height, 0, GL_RGBA, GL_FLOAT, NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPos, 0);
+
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
+  std::cout << "Positon data set to ID: " << currentTextureID << std::endl; // Tests not part of citation
+
   // normal color buffer
   glGenTextures(1, &gNorm);
   glBindTexture(GL_TEXTURE_2D, gNorm);
@@ -115,6 +115,10 @@ void NGLScene::initializeGL()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNorm, 0);
+
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
+  std::cout << "Normal data set to ID: " << currentTextureID << std::endl; // Tests not part of citation
+
   // color + specular color buffer
   glGenTextures(1, &gColorSpec);
   glBindTexture(GL_TEXTURE_2D, gColorSpec);
@@ -122,6 +126,10 @@ void NGLScene::initializeGL()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gColorSpec, 0);
+
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
+  std::cout << "ColourSpecular data set to ID: " << currentTextureID << std::endl; // Test not part of citation
+
   // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering
   unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
   glDrawBuffers(3, attachments);
@@ -136,6 +144,14 @@ void NGLScene::initializeGL()
     std::cerr << "FrameBufferError" << std::endl;
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+  // end of citation
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+  {
+    std::cout << "Gbuffer Complete" << std::endl;
+  }
+
+  // LIGHTS
+
   for (unsigned int i = 0; i < numLights; i++)
   {
     std::random_device rd;
@@ -143,13 +159,23 @@ void NGLScene::initializeGL()
     std::uniform_real_distribution<double> ColDist(0.1,1.0);
     lightPos.push_back(ngl::Vec3(posDist(rd),posDist(rd),posDist(rd)));
     lightCol.push_back(ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd)));
+    // randomly sets position and colour of each light
+  }
+
+  // UNIFORM BUFFER FOR LIGHTS
+
+  glGenBuffers(1, &uBuffer);
+  glBindBuffer(GL_UNIFORM_BUFFER, uBuffer);
+  glBufferData(GL_UNIFORM_BUFFER,500, nullptr, GL_STATIC_DRAW);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+  if (glCheckFramebufferStatus(GL_UNIFORM_BUFFER) != GL_FRAMEBUFFER_COMPLETE)
+  {
+    std::cout << "Uniform Buffer Error"<< std::endl;
   }
 
 
-  mesh1.Transform(0.0,0.0,0.0);
-
   mesh1.CreateVAO();
-
 
   glViewport(0, 0, width(), height());
 
@@ -163,7 +189,7 @@ void NGLScene::loadMatricesToShader(std::string ProgramName, bool CalcMatrix)
   glUseProgram(programID);
 
   ngl::Mat3 normalMatrix;
-  ngl::Mat4 M;
+
   ngl::Mat4 V;
   ngl::Mat4 P;
 
@@ -175,9 +201,9 @@ void NGLScene::loadMatricesToShader(std::string ProgramName, bool CalcMatrix)
 
   if (CalcMatrix == true)
   {
+    ngl::Mat4 M;
     M = mesh1.m_TRANS.getMatrix();
     glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,M.openGL());
-
     normalMatrix = ngl::Mat3(M*V);
     normalMatrix.inverse().transpose();
     glUniformMatrix3fv(glGetUniformLocation(programID,"normalMatrix"),1,GL_FALSE,normalMatrix.openGL());
@@ -198,27 +224,6 @@ void NGLScene::paintGL()
   float currentFrame = m_timer.elapsed() * 0.001f;
   m_deltatime = currentFrame-m_lastframe;
   m_lastframe = currentFrame;
-
-  // I actaully have no ideda
-  // ngl::Mat4 rotX = ngl::Mat4::rotateX(m_win.spinXFace);
-  // ngl::Mat4 rotY = ngl::Mat4::rotateY(m_win.spinYFace);
-  //
-  //
-  // m_mouseGlobalTX = rotY * rotX;
-  // m_mouseGlobalTX.m_m[3][0] = m_modelPos.m_x;
-  // m_mouseGlobalTX.m_m[3][1] = m_modelPos.m_y;
-  // m_mouseGlobalTX.m_m[3][2] = m_modelPos.m_z;
-
-  // std::cout << "Before GBuffer" << std::endl;
-  //
-  // GLint currentTextureID;
-  // glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
-  // std::cout << "Current Texture ID: " << currentTextureID << std::endl;
-  //
-  // GLint activeTexture;
-  // glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
-  // std::cout << "Active Texture Unit: " << activeTexture << std::endl;
-  //
 
   // G BUFFER PASS
 
@@ -242,15 +247,9 @@ void NGLScene::paintGL()
   glBindTexture(GL_TEXTURE_2D,gColorSpec);
 
   GLuint programID = ngl::ShaderLib::getProgramID("LightingShader");
-
   glUniform1i(glGetUniformLocation(programID, "gPos"), 0);
-
   glUniform1i(glGetUniformLocation(programID, "gNorm"), 1);
-
   glUniform1i(glGetUniformLocation(programID, "gColorSpec"), 2);
-
-  glUniform1i(glGetUniformLocation(programID, "NR_Lights"), numLights);
-
 
   for(unsigned int i = 0; i < numLights; i++)
   {
@@ -277,29 +276,15 @@ void NGLScene::paintGL()
   glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-  glBlitFramebuffer(-1, -1, m_win.width , m_win.height, 0, 0, m_win.width, m_win.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+  glBlitFramebuffer(0, 0, m_win.width , m_win.height, 0, 0, m_win.width, m_win.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
 
 
-  // glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
-  // std::cout << "Current Texture ID: " << currentTextureID << std::endl;
-  //
-  // std::cout << "End" << std::endl;
-
   ngl::ShaderLib::use("BoxLightShader");
   programID = ngl::ShaderLib::getProgramID("BoxLightShader");
-  glUseProgram(programID);
-  glUseProgram(programID);
 
-  ngl::Mat4 V;
-  ngl::Mat4 P;
-
-  V = m_cam.getView();
-  P = m_cam.getProjection();
-
-  glUniformMatrix4fv(glGetUniformLocation(programID,"View"),1,GL_FALSE,V.openGL());
-  glUniformMatrix4fv(glGetUniformLocation(programID,"Projection"),1,GL_FALSE,P.openGL());
+  loadMatricesToShader("BoxLightShader",false);
   for (unsigned int i = 0; i < numLights; i++)
   {
     lightTrans.setPosition(lightPos[i]);
@@ -331,7 +316,9 @@ void NGLScene::changeLights()
   }
 }
 
-
+// Following section modified from :-
+// Learnopengl.com. (2020). LearnOpenGL - Deferred Shading. [online]
+// [Accessed 2024] Available at: https://learnopengl.com/code_viewer_gh.php?code=src/5.advanced_lighting/8.1.deferred_shading/deferred_shading.cpp
 
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
@@ -434,25 +421,17 @@ void NGLScene::renderCube()
   glBindVertexArray(0);
 }
 
-
+// end of citation
 
 //----------------------------------------------------------------------------------------------------------------------
 
 void NGLScene::keyPressEvent(QKeyEvent *_event)
 {
-  // this method is called every time the main window recives a key event.
-  // we then switch on the key value and set the camera in the GLWindow
-  const float inc = 0.5f;
-  float xDirection = 0.0f;
-  float yDirection = 0.0f;
   switch (_event->key())
   {
   // escape key to quite
-  case Qt::Key_Escape : QGuiApplication::exit(EXIT_SUCCESS); break;
-  case Qt::Key_Space :
-      m_win.spinXFace=0;
-      m_win.spinYFace=0;
-      m_modelPos.set(ngl::Vec3::zero());
+  case Qt::Key_Escape :
+    QGuiApplication::exit(EXIT_SUCCESS); break;
   case Qt::Key_A :
     m_cam.Move(0.0,-1.0,m_deltatime);
     break;
