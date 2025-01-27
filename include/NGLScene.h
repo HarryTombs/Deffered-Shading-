@@ -7,13 +7,8 @@
 #include "WindowParams.h"
 #include "Mesh.h"
 #include "FirstPersonCamera.h"
-// this must be included after NGL includes else we get a clash with gl libs
 #include <QOpenGLWindow>
 #include <QElapsedTimer>
-#include <memory>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 //----------------------------------------------------------------------------------------------------------------------
 /// @file NGLScene.h
 /// @brief this class inherits from the Qt OpenGLWindow and allows us to use NGL to draw OpenGL
@@ -106,30 +101,32 @@ private:
     struct Lights
     {
         ngl::Vec3 lightsPos;
+        float padding;
         ngl::Vec3 lightsCol;
-        ngl::Transformation lightsTrans;
-        const float constant = 1.0f;
-        const float linear = 0.7f;
-        GLfloat quadratic = 1.8f;
         float radius;
-    };
+    }; // struct matching the one in the light shader in case that will make it not work
     std::vector<Lights> lightArray;
+
+    const float constant = 1.0f;
+    const float linear = 0.7f;
+    GLfloat quadratic = 1.8f;
 
     std::vector<ngl::Vec3> lightPos;
     std::vector<ngl::Vec3> lightCol;
     ngl::Transformation lightTrans;
     float lightDiff = 1;
     int numLights = 32;
+    int maxLights = 200; // 200 because beyond that its just pure white basically
     void changeLights();
     void clearLights();
 
     int numMesh = 10;
     std::vector<Mesh> meshArray;
-    Mesh mesh1;
+    Mesh mesh;
 
     unsigned int gBuffer;
-    unsigned int uBuffer;
-    unsigned int gPos, gNorm, gColorSpec;
+    unsigned int ssBuffer;
+    unsigned int gPos, gNorm, gColorSpec; // i make a lot of global ints because i use them across a lot of functions
 
     void renderQuad();
     void renderCube();

@@ -1,16 +1,11 @@
 #include <QMouseEvent>
 #include <QGuiApplication>
-
 #include "NGLScene.h"
 #include "Mesh.h"
 #include <random>
 #include <ngl/NGLInit.h>
 #include <ngl/ShaderLib.h>
-#include <ngl/VAOPrimitives.h>
 #include <ngl/Transformation.h>
-#include <ngl/NGLStream.h>
-
-
 #include <iostream>
 
 
@@ -42,6 +37,7 @@ NGLScene::NGLScene(const std::string &_objName, const std::string &_texName)
   m_objFileName = _objName;
   m_texFileName = _texName;
   m_timer.start(); // timer to know what time it is
+  lightArray.resize(maxLights);
 }
 
 
@@ -80,10 +76,6 @@ void NGLScene::initializeGL()
   ngl::Vec3 up(0, 1, 0);
   m_cam.set(from,to,up);
   m_cam.setProjection(45.0f,720.0f/576.0f,0.05f,100.0f);
-
-  int w = this->size().width();
-  int h = this->size().height();
-
 
   GLint currentTextureID;
   glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTextureID);
@@ -152,34 +144,26 @@ void NGLScene::initializeGL()
 
   // LIGHTS
 
-  glGenBuffers(1,&uBuffer);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uBuffer);
-
-  int offset = 0;
-  for (unsigned int i = 0; i < numLights; i++)
+  for (unsigned int i = 0; i < maxLights; i++)   // sets random values for the max number of lights not current count
   {
     std::random_device rd;
     std::uniform_real_distribution<double> posDist(-lightDiff,lightDiff);
     std::uniform_real_distribution<double> ColDist(0.1,1.0);
-    lightPos.push_back(ngl::Vec3(posDist(rd),posDist(rd),posDist(rd)));
-    lightCol.push_back(ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd)));
+    lightArray[i].lightsPos =ngl::Vec3(posDist(rd),posDist(rd),posDist(rd));
+    lightArray[i].lightsCol =ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd));
     // randomly sets position and colour of each light
+    const float maxBrightness = std::fmaxf(std::fmaxf(lightArray[i].lightsCol.m_x, lightArray[i].lightsCol.m_y), lightArray[i].lightsCol.m_z);
+    lightArray[i].radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * maxBrightness))) / (2.0f * quadratic);
+    // The distance of the light
   }
 
-  // UNIFORM BUFFER FOR LIGHTS
+  glGenBuffers(1,&ssBuffer); // create shaders storage buffer
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssBuffer);
+  glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(Lights)*maxLights, lightArray.data(), GL_DYNAMIC_DRAW);   // load entire light count into SSBuffer so dynmaically changes with input
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER,0, ssBuffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-  glGenBuffers(1, &uBuffer);
-  glBindBuffer(GL_UNIFORM_BUFFER, uBuffer);
-  glBufferData(GL_UNIFORM_BUFFER,500, nullptr, GL_STATIC_DRAW);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-  if (glCheckFramebufferStatus(GL_UNIFORM_BUFFER) != GL_FRAMEBUFFER_COMPLETE)
-  {
-    std::cout << "Uniform Buffer Error"<< std::endl;
-  }
-
-
-  mesh1.CreateVAO();
+  mesh.CreateVAO();
 
   glViewport(0, 0, width(), height());
 
@@ -190,7 +174,7 @@ void NGLScene::loadMatricesToShader(std::string ProgramName, bool CalcMatrix)
 {
   ngl::ShaderLib::use(ProgramName);
   GLuint programID = ngl::ShaderLib::getProgramID(ProgramName);
-  glUseProgram(programID);
+  glUseProgram(programID); // uses inputed program name
 
   ngl::Mat3 normalMatrix;
 
@@ -198,15 +182,15 @@ void NGLScene::loadMatricesToShader(std::string ProgramName, bool CalcMatrix)
   ngl::Mat4 P;
 
   V = m_cam.getView();
-  P = m_cam.getProjection();
+  P = m_cam.getProjection(); // sends current view and projection matrixes to the uniform
 
   glUniformMatrix4fv(glGetUniformLocation(programID,"View"),1,GL_FALSE,V.openGL());
   glUniformMatrix4fv(glGetUniformLocation(programID,"Projection"),1,GL_FALSE,P.openGL());
 
-  if (CalcMatrix == true)
+  if (CalcMatrix == true) // Calc matrix true for instances of the individual mesh
   {
     ngl::Mat4 M;
-    M = mesh1.m_TRANS.getMatrix();
+    M = mesh.m_TRANS.getMatrix();
     glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,M.openGL());
     normalMatrix = ngl::Mat3(M*V);
     normalMatrix.inverse().transpose();
@@ -235,11 +219,11 @@ void NGLScene::paintGL()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   loadMatricesToShader("GbufferShader", true);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D,mesh1.texId);
-  mesh1.Draw();
+  glBindTexture(GL_TEXTURE_2D,mesh.texId);
+  mesh.Draw();
   glBindFramebuffer(GL_FRAMEBUFFER,0);
 
-  // // LIGHT PASS
+  // LIGHT PASS
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   loadMatricesToShader("LightingShader", true);
@@ -253,37 +237,31 @@ void NGLScene::paintGL()
   GLuint programID = ngl::ShaderLib::getProgramID("LightingShader");
   glUniform1i(glGetUniformLocation(programID, "gPos"), 0);
   glUniform1i(glGetUniformLocation(programID, "gNorm"), 1);
-  glUniform1i(glGetUniformLocation(programID, "gColorSpec"), 2);
+  glUniform1i(glGetUniformLocation(programID, "gColorSpec"), 2); // loads the buffered textures into the lighting shader
 
-  if (glGetUniformLocation(programID, "gPos") == -1 || glGetUniformLocation(programID, "gNorm") == -1 || glGetUniformLocation(programID, "gColorSpec") == -1)
+  if (glGetUniformLocation(programID, "gPos") == -1 || glGetUniformLocation(programID, "gNorm") == -1 || glGetUniformLocation(programID, "gColorSpec") == -1) // check they all got loaded ok
   {
     std::cerr << "Uniform Error" << std::endl;
   }
 
-  // if (glGetUniformLocation(programID, "gPos") != -1 && glGetUniformLocation(programID, "gNorm") != -1 && glGetUniformLocation(programID, "gColorSpec") != -1)
-  // {
-  //   std::cout << "Uniforms Loaded" << std::endl;
-  // }
-
-  for(unsigned int i = 0; i < numLights; i++)
+  for(unsigned int i = 0; i < numLights; i ++ )
   {
-    glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Pos").c_str()),1,lightPos[i].openGL());
-    glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Col").c_str()),1,lightCol[i].openGL());
-    const float constant = 1.0f;
-    const float linear = 0.7f;
-    GLfloat quadratic = 1.8f;
-    glUniform1f(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Linear").c_str()),linear);
-    glUniform1f(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Quadratic").c_str()),quadratic);
-    const float maxBrightness = std::fmaxf(std::fmaxf(lightCol[i].m_x, lightCol[i].m_y), lightCol[i].m_z);
-    float radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * maxBrightness))) / (2.0f * quadratic);
-    glUniform1f(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Radius").c_str()),radius);
-
+    const float maxBrightness = std::fmaxf(std::fmaxf(lightArray[i].lightsCol.m_x, lightArray[i].lightsCol.m_y), lightArray[i].lightsCol.m_z);
+    lightArray[i].radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * maxBrightness))) / (2.0f * quadratic);
   }
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER,ssBuffer);
+  glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0,sizeof(Lights)*maxLights,lightArray.data());
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
 
+
+  glUniform1f(glGetUniformLocation(programID,("Linear")),linear);
+  glUniform1f(glGetUniformLocation(programID,("Quadratic")),quadratic);
+  glUniform1i(glGetUniformLocation(programID, "numLights"), numLights); // numLights is updated through uniform thankfully SSBO allows for dynamic arrays
   glUniform3fv(glGetUniformLocation(programID,"viewPos"),1,m_cam.camPos.openGL());
+
   glDisable(GL_DEPTH_TEST);
 
-  renderQuad();
+  renderQuad(); // render the quad with all the textures multiplied together
 
   glEnable(GL_DEPTH_TEST);
 
@@ -292,41 +270,53 @@ void NGLScene::paintGL()
 
   glBlitFramebuffer(0, 0, m_win.width , m_win.height, 0, 0, m_win.width, m_win.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glBindTexture(GL_TEXTURE_2D, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);  // Take the depth from the gBuffer to ensure box lights appear behind mesh
 
 
   ngl::ShaderLib::use("BoxLightShader");
-  programID = ngl::ShaderLib::getProgramID("BoxLightShader");
+  programID = ngl::ShaderLib::getProgramID("BoxLightShader"); // simple box shader and setup
 
-  loadMatricesToShader("BoxLightShader",false);
+  loadMatricesToShader("BoxLightShader",false); // each box has a unique position so new matrix required per box
   for (unsigned int i = 0; i < numLights; i++)
   {
-    lightTrans.setPosition(lightPos[i]);
-    lightTrans.setScale(0.05,0.05,0.05);
+    lightTrans.setPosition(lightArray[i].lightsPos); // the ngl::Transform is really useful
+    lightTrans.setScale(0.05,0.05,0.05); // small scale for small boxes
     ngl::Mat4 model = lightTrans.getMatrix();
     glUniformMatrix4fv(glGetUniformLocation(programID,"Model"),1,GL_FALSE,model.openGL());
-    glUniform3fv(glGetUniformLocation(programID,"lightCol"),1,lightCol[i].openGL());
-    renderCube();
+    glUniform3fv(glGetUniformLocation(programID,"lightCol"),1,lightArray[i].lightsCol.openGL());
+    renderCube();// send to uniform and render
   }
 }
 
 void NGLScene::clearLights()
 {
-  lightPos.clear();
-  lightCol.clear();
+  for (unsigned int i = 0; i < maxLights; i++)
+  {
+    lightArray.clear(); // reset light attributes as we're doing a new set of random numbers
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,ssBuffer);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0,sizeof(Lights)*maxLights,lightArray.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
+  }
 }
 
 
 void NGLScene::changeLights()
 {
-  for (unsigned int i = 0; i < numLights; i++)
+  for (unsigned int i = 0; i < maxLights; i++)
   {
     std::random_device rd;
     std::uniform_real_distribution<double> posDist(-lightDiff,lightDiff);
-    std::uniform_real_distribution<double> ColDist(0.1,1.0);
-    lightPos.push_back(ngl::Vec3(posDist(rd),posDist(rd),posDist(rd)));
-    lightCol.push_back(ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd)));
+    std::uniform_real_distribution<double> ColDist(0.1,1.0); // new set of random numbers
+    lightArray[i].lightsPos =ngl::Vec3(posDist(rd),posDist(rd),posDist(rd));
+    lightArray[i].lightsCol =ngl::Vec3(ColDist(rd),ColDist(rd),ColDist(rd));
+    const float maxBrightness = std::fmaxf(std::fmaxf(lightArray[i].lightsCol.m_x, lightArray[i].lightsCol.m_y), lightArray[i].lightsCol.m_z);
+    lightArray[i].radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * maxBrightness))) / (2.0f * quadratic);
+
+    // randomly sets position and colour of each light
   }
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssBuffer);
+  glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0,sizeof(Lights)*maxLights,lightArray.data());
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); //send it to the SSbuffer
 }
 
 // Following section modified from :-
@@ -455,56 +445,54 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
     m_cam.Move(1.0,0.0,m_deltatime);
     break;
   case Qt::Key_S :
-    m_cam.Move(-1.0,0.0,m_deltatime);
+    m_cam.Move(-1.0,0.0,m_deltatime); // WASD controls
     break;
   case Qt::Key_Up :
-    mesh1.Transform(0.0,0.5,0.0);
+    mesh.Transform(0.0,0.5,0.0);
     break;
   case Qt::Key_Down :
-    mesh1.Transform(0.0,-0.5,0.0);
+    mesh.Transform(0.0,-0.5,0.0);
     break;
   case Qt::Key_Left :
-    mesh1.Transform(-0.5,0.0,0.0);
+    mesh.Transform(-0.5,0.0,0.0);
     break;
   case Qt::Key_Right :
-    mesh1.Transform(0.5,0.0,0.0);
+    mesh.Transform(0.5,0.0,0.0); // used for moving the object, mainly for debug but still useful
     break;
   case Qt::Key_L :
     clearLights();
-    changeLights();
+    changeLights(); // shows a good vairety and how quickly the light calc works
     break;
   case Qt::Key_O :
     lightDiff += 0.1;
     for (unsigned int i = 0; i < numLights; i++)
     {
-      lightPos[i].operator*=(1.1);
-
+      lightArray[i].lightsPos.operator*=(1.1);
     }
     break;
   case Qt::Key_I :
     lightDiff -= 0.1;
     for (unsigned int i = 0; i < numLights; i++)
     {
-      lightPos[i].operator*=(0.9);
+      lightArray[i].lightsPos.operator*=(0.9); // good for showing lights at a distance
     }
     break;
   case Qt::Key_M :
-    numLights += 2;
-    changeLights();
-    break;
+    if (numLights >= maxLights) // in case you try and go over the max
+    {
+      break;
+    }
+    if (numLights <= maxLights)
+    {
+      numLights += 2;
+      break;
+    }
   case Qt::Key_N :
     if (numLights > 2)
     {
-      numLights -= 2;
-      changeLights();
+      numLights -= 2;  // good for getting a huge or small amount of lights
     }
-
-
   break;
-
-
   }
-  // finally update the GLWindow and re-draw
-
     update();
 }

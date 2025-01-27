@@ -1,4 +1,4 @@
-#version 410 core
+#version 430 core
 
 out vec4 FragColor;
 
@@ -7,19 +7,21 @@ in vec2 TexCoord;
 uniform sampler2D gPos;
 uniform sampler2D gNorm;
 uniform sampler2D gColorSpec;
-
 struct light
 {
-    vec3 Pos;
-    vec3 Col;
-
-    float Linear;
-    float Quadratic;
-    float Radius;
+    vec3 lightsPos;
+    float padding;
+    vec3 lightsCol;
+    float radius;
 };
-const int NR_Lights = 32;
-uniform light lights[NR_Lights];
+layout(std430, binding = 0) buffer LightBuffer{
+    light lights[];
+};
+uniform int numLights;
+
 uniform vec3 viewPos;
+uniform float Linear;
+uniform float Quadratic;
 
 
 void main()
@@ -30,22 +32,21 @@ void main()
 
     vec3 lighting = albedo * 0.1;
     vec3 viewDir = normalize(viewPos - Fragpos);
-    for(int i = 0; i < NR_Lights; i++)
+    for(int i = 0; i < numLights; i++)
     {
-        float distance  = length(lights[i].Pos - Fragpos);
-        if(distance < lights[i].Radius)
+        vec3 lightpos = lights[i].lightsPos;
+        vec3 lightcol = lights[i].lightsCol;
+        float radius = lights[i].radius;
+        float distance  = length(lightpos - Fragpos);
+        if(distance < radius)
         {
-            vec3 lightDir = normalize(lights[i].Pos - Fragpos);
-
-
+            vec3 lightDir = normalize(lightpos - Fragpos);
             float diff = max(dot(Normal,lightDir), 0.0);
-            vec3 diffuse = diff * albedo * lights[i].Col;
-
+            vec3 diffuse = diff * albedo * lightcol;
             vec3 halfwaydir = normalize(lightDir + viewDir);
             float spec = pow(max(dot(Normal, halfwaydir), 0.0), 16.0);
-            vec3 specular = spec * lights[i].Col;
-
-            float attenuiation = 1.0 / (1.0 +lights[i].Linear *distance + lights[i].Quadratic * distance * distance);
+            vec3 specular = spec * lightcol;
+            float attenuiation = 1.0 / (1.0 +Linear *distance + Quadratic * distance * distance);
             diffuse *= attenuiation;
             specular *= attenuiation;
 

@@ -2,8 +2,6 @@
 #define FIRSTPERSONCAMER_H_
 #include <ngl/Vec3.h>
 #include <ngl/Mat4.h>
-#include <ngl/Transformation.h>
-#include <memory>
 
 class FirstPersonCamera
 {

@@ -79,7 +79,7 @@ void FirstPersonCamera::processMouseMovement(float _newX, float _newY, GLboolean
         if (m_pitch > 89.0)
             m_pitch = 89.0;
         if (m_pitch < -89.0)
-            m_pitch = -89.0;
+            m_pitch = -89.0; // incase they got upside down
     }
 
     setVectors(); // send them to the reset!
