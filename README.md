@@ -3,11 +3,17 @@
 
 # Deffered Shading
 
-Deffered shading is a technique of shading for real time usage invovling use of a Geometry buffer for information storage used later in the lighting pass, allowing for calculations of a large number of dynamic lights quickly. This project was written in C++ with the OpenGL NGL and QT libraries
+Deffered shading is a technique of shading for real time usage invovling use of a Geometry buffer for information storage used later in the lighting pass, allowing for calculations of a large number of dynamic lights quickly. This project was written in C++ with the OpenGL NGL and QT libraries, to Run add new cmake target for the copy shaders to the main program 
 
-*Contorls*
+This build is a more basic version of a modern day approach to the deffered shading pipeline, where larger game engines and rendering systems carry capabilties of dynamic loading, unloading and calculation of data throughout the experience I used a much more stripped down version. This project can be developed further to include more modern techniques of illumination, including light field probes or virtual point lights. 
+
+it's design is an adaptation of Joey De Vris' documentation of the deffered shading process included on learnopengl.com (de Vries, 2020) using the framework of the NGL libraries blankNGL scene, with inclusions of my own research into SSBOs (Stephano, n.d.) and 3D camera and object creation.
+
+*Controls*
 
 **W** Forward **A** Left **S** Down **D** Right
+
+**Up** **Down** **Left** **Right** Move model position
 
 **LeftMouse** Rotate Camera view
 
