@@ -1,6 +1,74 @@
 # Programming project
 *Harry Ben Brass Tombs*
 
+# Deffered Shading
+
+Deffered shading is a technique of shading for real time usage invovling use of a Geometry buffer for information storage used later in the lighting pass, allowing for calculations of a large number of dynamic lights quickly. This project was written in C++ with the OpenGL NGL and QT libraries
+
+*Contorls*
+
+**W** Forward **A** Left **S** Down **D** Right
+
+**LeftMouse** Rotate Camera view
+
+**O** Move lights outwards      
+
+**I** Move lights inwards 
+
+**M** Increase light count 
+
+**N** Decrease light count
+
+**L** Randomise Light positions
+
+
+
+## *Breakdown*
+
+```mermaid
+flowchart TD
+
+A[Start]-->in1[/GeoInput/]-->do1[Generate GBuffer]-->do1a[Save Random Light location]-->do2[Save Position Info]-->do2a[Find distance to light]-->do3a
+do1a-->do3[Save Normal Info]-->do3a[Find light angle]-->do3B[Add Albedo/Spec]
+do1a-->do4[Save Albedo/Spec info]-->do3B
+do3B-->do5[Project to screen quad]-->B[End]
+
+```
+```mermaid
+classDiagram
+class NGLScene{
+- ObjFile : string
+- TextureFile : string
+- gBuffer : int
+- gPos : int
+- gNorm : int
+- gColorSpec : int
+
+
+
++ NGLscene(ObjFile, TextureFile)
+- LoadMatricesToShader(ProgramName, CalcMatrix);
+- RenderQuad()
+- RenderCube()
+}
+
+class Mesh{
+- Position Vec3
+- Transform()
+
+}
+class Light~Struct~{
+- Position Vec3
+- changeLights()
+
+}
+
+NGLScene o-- Mesh
+NGLScene *-- Light
+
+
+```
+
 ## Sources
 
 https://learnopengl.com/Advanced-Lighting/Deferred-Shading
