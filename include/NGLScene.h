@@ -102,6 +102,19 @@ private:
     float m_lastframe = 0.0f;
     QSet<Qt::Key> m_keysPressed;
 
+
+    struct Lights
+    {
+        ngl::Vec3 lightsPos;
+        ngl::Vec3 lightsCol;
+        ngl::Transformation lightsTrans;
+        const float constant = 1.0f;
+        const float linear = 0.7f;
+        GLfloat quadratic = 1.8f;
+        float radius;
+    };
+    std::vector<Lights> lightArray;
+
     std::vector<ngl::Vec3> lightPos;
     std::vector<ngl::Vec3> lightCol;
     ngl::Transformation lightTrans;

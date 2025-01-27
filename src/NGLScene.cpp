@@ -152,6 +152,10 @@ void NGLScene::initializeGL()
 
   // LIGHTS
 
+  glGenBuffers(1,&uBuffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, uBuffer);
+
+  int offset = 0;
   for (unsigned int i = 0; i < numLights; i++)
   {
     std::random_device rd;
@@ -251,6 +255,16 @@ void NGLScene::paintGL()
   glUniform1i(glGetUniformLocation(programID, "gNorm"), 1);
   glUniform1i(glGetUniformLocation(programID, "gColorSpec"), 2);
 
+  if (glGetUniformLocation(programID, "gPos") == -1 || glGetUniformLocation(programID, "gNorm") == -1 || glGetUniformLocation(programID, "gColorSpec") == -1)
+  {
+    std::cerr << "Uniform Error" << std::endl;
+  }
+
+  // if (glGetUniformLocation(programID, "gPos") != -1 && glGetUniformLocation(programID, "gNorm") != -1 && glGetUniformLocation(programID, "gColorSpec") != -1)
+  // {
+  //   std::cout << "Uniforms Loaded" << std::endl;
+  // }
+
   for(unsigned int i = 0; i < numLights; i++)
   {
     glUniform3fv(glGetUniformLocation(programID,("lights[" + std::to_string(i) + "].Pos").c_str()),1,lightPos[i].openGL());
@@ -294,7 +308,6 @@ void NGLScene::paintGL()
     glUniform3fv(glGetUniformLocation(programID,"lightCol"),1,lightCol[i].openGL());
     renderCube();
   }
-
 }
 
 void NGLScene::clearLights()
