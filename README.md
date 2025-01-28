@@ -144,6 +144,8 @@ Speierer, S. (n.d.). *Metropolis Virtual Point Light Rendering.* [online] Availa
 
 Stephano, J. (n.d.). *Shader Storage Buffer Objects (SSBOs).* [online] J Stephano. Available at: https://ktstephano.github.io/rendering/opengl/ssbos.
 
+Victor Gordan (2021). OpenGL Tutorial 8 - Camera. [online] YouTube. Available at: https://www.youtube.com/watch?v=86_pQCKOIPk.
+
 Stephano, J. (2020). *StratusGFX Technical Frame Analysis.* [online] J Stephano. Available at: https://ktstephano.github.io/rendering/stratusgfx/frame_analysis_v0_10#realtime-global-illumination.
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/RM1pL2Qm)
