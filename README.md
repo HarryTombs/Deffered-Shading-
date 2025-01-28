@@ -112,6 +112,8 @@ NGLScene ..> FirstPersonCamera
 
 ## Sources
 
+ChatGPT (2025). *Used throughout project for debugging and document explaination.* [online]. Available at: https://chatgpt.com/.
+
 C. Lambru, Morar, A., F. Moldoveanu, V. Asavei and A. Moldoveanu (2021). *Comparative Analysis of RealTime Global Illumination Techniques in Current Game Engines.* IEEE Access, 9, pp.125158–125183. doi:https://doi.org/10.1109/ACCESS.2021.3109663.
 
 Courrèges, A. (2015). *GTA V - Graphics Study.* [online] Adrian Courrèges. Available at: https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/.
