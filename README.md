@@ -5,9 +5,14 @@
 
 Deffered shading is a technique of shading for real time usage invovling use of a Geometry buffer for information storage used later in the lighting pass, allowing for calculations of a large number of dynamic lights quickly. This project was written in C++ with the OpenGL NGL and QT libraries, to Run add new cmake target for the copy shaders to the main program 
 
-This build is a more basic version of a modern day approach to the deffered shading pipeline, where larger game engines and rendering systems carry capabilties of dynamic loading, unloading and calculation of data throughout the experience I used a much more stripped down version. This project can be developed further to include more modern techniques of illumination, including light field probes or virtual point lights. 
+This build is a more basic version of a modern day approach to the deffered shading pipeline, where larger game engines and rendering systems carry capabilties of dynamic loading, unloading and calculation of data throughout the experience I used a much more stripped down version. This project can be developed further to include more modern techniques of illumination, including light field probes or virtual point lights.
+
 
 it's design is an adaptation of Joey De Vris' documentation of the deffered shading process included on learnopengl.com (de Vries, 2020) using the framework of the NGL libraries blankNGL scene, with inclusions of my own research into SSBOs (Stephano, n.d.) and 3D camera and object creation.
+
+Example:
+
+![defferedShadingExample](https://github.com/user-attachments/assets/92660a7f-3d67-4ce9-be8b-d5175dc105c0)
 
 *Controls*
 
@@ -49,8 +54,12 @@ class NGLScene{
 - gPos : int
 - gNorm : int
 - gColorSpec : int
-
-
+- Projection : Mat4
+- View : Mat4
+- Camera : FirstPersonCamera
+- float deltatime
+- LightsNum : int
+- MaxLights : int
 
 + NGLscene(ObjFile, TextureFile)
 - LoadMatricesToShader(ProgramName, CalcMatrix);
@@ -60,155 +69,81 @@ class NGLScene{
 
 class Mesh{
 - Position Vec3
-- Transform()
+- ObjFile : string
+- TextureFile : string
++ Mesh(ObjFile, TextureFile)
+- Draw()
+- Transform(float X, float Y, float Z)
 
 }
 class Light~Struct~{
 - Position Vec3
+- Colour Vec3
+- Radius float
 - changeLights()
+- clearLights()
 
 }
+class FirstPersonCamera{
+- Position Vec3
+- Up Vec3
+- To Vec3
+- Front Vec3
+- FOV float
+- Aspect float
+- Nearplane float 
+- Farplane float 
+- Speed float
+- Sensitivity float
+- Projection Mat4
+- View Mat4
+- FirstPersonCamera()
+- FirstPersonCamera(float FOV, float nearplane, float farplane)
+- setView()
+}
 
-NGLScene o-- Mesh
-NGLScene *-- Light
+NGLScene ..> Mesh
+NGLScene ..> Light
+NGLScene ..> FirstPersonCamera
+
 
 
 ```
 
 ## Sources
 
-https://learnopengl.com/Advanced-Lighting/Deferred-Shading
+C. Lambru, Morar, A., F. Moldoveanu, V. Asavei and A. Moldoveanu (2021). *Comparative Analysis of RealTime Global Illumination Techniques in Current Game Engines.* IEEE Access, 9, pp.125158–125183. doi:https://doi.org/10.1109/ACCESS.2021.3109663.
 
-https://download.nvidia.com/developer/presentations/2004/6800_Leagues/6800_Leagues_Deferred_Shading.pdf
+Courrèges, A. (2015). *GTA V - Graphics Study.* [online] Adrian Courrèges. Available at: https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/.
 
-https://github.com/NCCA/Sponza
+de Vries, J. (2020). *LearnOpenGL - Deferred Shading.* [online] Learnopengl.com. Available at: https://learnopengl.com/Advanced-Lighting/Deferred-Shading.
 
-https://github.com/NCCA/FBODemos/blob/main/DeferredShading/include/FrameBufferObject.h
+Hachisuka, T. (2025). *GPU Gems 2 Chapter 38. High-Quality Global Illumination Rendering Using Rasterization.* [online] NVIDIA Developer. Available at: https://developer.nvidia.com/gpugems/gpugems2/part-v-image-oriented-computing/chapter-38-high-quality-global-illumination.
 
-http://www.codinglabs.net/tutorial_simple_def_rendering.aspx
+Harris, M. and Hargreaves, S. (2004). *Deferred Shading.* [online] Available at: https://download.nvidia.com/developer/presentations/2004/6800_Leagues/6800_Leagues_Deferred_Shading.pdf.
 
-https://my.eng.utah.edu/~cs5600/slides/Wk%209%20D3DTutorial_DeferredShading.pdf
+Kantor, J. (2015). *Global Illumination through Virtual Point Lights.* [online] Available at: https://is.muni.cz/th/payge/report.pdf.
 
-https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-9-deferred-shading-stalker
+Keller, A. (n.d.). *Instant Radiosity.* [online] Available at: http://luthuli.cs.uiuc.edu/~daf/courses/Rendering/Papers-2/keller97instant.pdf#page=6&zoom=100.
 
-https://jose-villegas.github.io/post/deferred_voxel_shading/
+Majercik, Z., Müller, T., Keller, A., Nowrouzezahrai, D. and McGuire, M. (2021). *Dynamic Diffuse Global Illumination Resampling.* Computer Graphics Forum, 41(1), pp.158–171. doi:https://doi.org/10.1111/cgf.14427.
 
+Mcguire, M. (2017).*Irradiance & Light Field Probes with Visibility.* [online] Available at: https://casual-effects.com/research/McGuire2017LightField/McGuire2017LightField-GDCSlides.pdf.
 
+McGuire, M., Mara, M., Nowrouzezahrai, D. and Luebke, D. (2017). *Real-time Global Illumination Using Precomputed Light Field Probes. Proceedings of the 21st ACM SIGGRAPH Symposium on Interactive 3D Graphics and Games.* doi:https://doi.org/10.1145/3023368.3023378.
 
-### That game blog
+Möller, T., Haines, E., Naty Hoffman, Pesce, A., Iwanicki, M. and Sébastien Hillaire (2018). *Real-time Rendering.* Boca Raton: Crc Press, Taylor & Francis Group.
 
-https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/
+Pesce, A. (2020). *Hallucinations re: the rendering of Cyberpunk 2077.* [online] Blogspot.com. Available at: https://c0de517e.blogspot.com/2020/12/hallucinations-re-rendering-of.html.
 
-**METRO** http://morad.in/2019/03/27/observations-about-the-rendering-of-metro-exodus/
+Santell, J. (2019). *Model View Projection.* [online] jsantell.com. Available at: https://jsantell.com/model-view-projection/.
 
-**Cyberpunk** https://c0de517e.blogspot.com/2020/12/hallucinations-re-rendering-of.html
+Shishkovtsov, O. (2005). *GPU Gems 2 Chapter 9. Deferred Shading in S.T.A.L.K.E.R.* [online] NVIDIA Developer. Available at: https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-9-deferred-shading-stalker.
 
-**GTA V** https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/
+Speierer, S. (n.d.). *Metropolis Virtual Point Light Rendering.* [online] Available at: https://speierers.github.io/resources/pdf/metropolis_vpl.pdf
 
-**Deux Ex** https://www.adriancourreges.com/blog/2015/03/10/deus-ex-human-revolution-graphics-study/
+Stephano, J. (n.d.). *Shader Storage Buffer Objects (SSBOs).* [online] J Stephano. Available at: https://ktstephano.github.io/rendering/opengl/ssbos.
 
-**Nino Kuni** https://blog.thomaspoulet.fr/ninokuni2-frame/
-
-## Extra Sources
-
-I will cite these correctly later please excuse my poor referincing system for now
-
-https://en.wikipedia.org/wiki/Ray_tracing_(graphics)
-
-https://jcgt.org/published/0008/02/01/
-
-https://www.sci.utah.edu/~wald/PhD/wald_phd.pdf
-
-https://github.com/NVIDIAGameWorks/RTXGI
-
-https://developer.nvidia.com/rtx/ray-tracing/rtxgi
-
-https://github.com/NVIDIAGameWorks/RTXDI
-
-https://resources.nvidia.com/en-us-game-dev-rtx/gtcspring21-s32639
-
-https://alain.xyz/blog/ray-tracing-denoising
-
-https://bth.diva-portal.org/smash/get/diva2:1440210/FULLTEXT02.pdf
-
-https://developer.download.nvidia.com/video/gputechconf/gtc/2019/presentation/s9985-exploring-ray-traced-future-in-metro-exodus.pdf
-
-https://cs.dartmouth.edu/~wjarosz/publications/mara17towards.html
-
-https://gdcvault.com/play/1026722/RTXGI-Scalable-Ray-Traced-Global
-
-https://gdcvault.com/play/1026721/RTX-Ray-Tracing-Best-Practices
-
-https://www.gdcvault.com/play/1024353/
-
-https://in1weekend.blogspot.com/2016/01/ray-tracing-in-one-weekend.html
-
-https://jsantell.com/model-view-projection/
-
-https://ktstephano.github.io/rendering/stratusgfx/frame_analysis_v0_10#realtime-global-illumination
-
-https://docs.unity3d.com/Manual/LightProbes.html
-
-https://casual-effects.com/research/McGuire2017LightField/index.html
-
-https://casual-effects.com/research/McGuire2017LightField/McGuire2017LightField-GDCSlides.pdf
-
-https://dl.acm.org/doi/abs/10.1145/3023368.3023378
-
-https://github.com/Global-Illuminati/Precomputed-Light-Field-Probes
-
-https://developer.nvidia.com/gpugems/gpugems2/part-v-image-oriented-computing/chapter-38-high-quality-global-illumination
-
-https://bpb-us-w2.wpmucdn.com/sites.gatech.edu/dist/e/466/files/2014/07/gpulecture05su14_lightrast.pdf
-
-https://voltaico.net/files/article.pdf
-
-https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/overview-rasterization-algorithm.html
-
-https://en.wikipedia.org/wiki/Rasterisation
-
-https://blogs.nvidia.com/blog/whats-difference-between-ray-tracing-rasterization/
-
-http://luthuli.cs.uiuc.edu/~daf/courses/Rendering/Papers-2/keller97instant.pdf#page=6&zoom=100,72,920
-
-https://www.diva-portal.org/smash/get/diva2:482587/FULLTEXT01.pdf
-
-https://www.csie.ntu.edu.tw/~cyy/courses/rendering/13fall/lectures/handouts/ManyLight-I.pdf
-
-https://is.muni.cz/th/payge/report.pdf
-
-https://github.com/rohith10/ForwardPlus-InstantRadiosity/blob/master/Documentation.pdf
-
-https://speierers.github.io/resources/pdf/metropolis_vpl.pdf
-
-https://jsantell.com/model-view-projection/
-
-
-### Other
-
-https://ieeexplore.ieee.org/abstract/document/9527241
-
-https://learnopengl.com/
-
-https://graphicscodex.com/app/app.html
-
-https://www.khronos.org/opengl/wiki/
-
-https://en.wikipedia.org/wiki/Bidirectional_reflectance_distribution_function
-
-https://en.wikipedia.org/wiki/Rendering_equation
-
-https://www.youtube.com/watch?v=gsZiJeaMO48
-
-https://www.youtube.com/watch?v=WQLPZKpnod8
-
-https://ogldev.org/
-
-https://ebookcentral.proquest.com/lib/bournemouth-ebooks/reader.action?docID=5754532&ppg=124#ppg=458
-
-
-
-
-
+Stephano, J. (2020). *StratusGFX Technical Frame Analysis.* [online] J Stephano. Available at: https://ktstephano.github.io/rendering/stratusgfx/frame_analysis_v0_10#realtime-global-illumination.
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/RM1pL2Qm)
